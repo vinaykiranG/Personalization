@@ -52,20 +52,24 @@ export class AppSettingsService {
   // I will remove them in a future step if they are not needed.
 
   getSavedSettings(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiBase}/saved-settings/${this.staticUserId}`, this.getAuthHeaders());
+    // This endpoint is not defined in the new requirements, so I will leave it as is for now.
+    return this.http.get<any[]>(`/api/saved-settings/${this.staticUserId}`, this.getAuthHeaders());
   }
 
   saveSetting(settings: AppSettings): Observable<any> {
-    return this.http.post(`${this.apiBase}/saved-settings/${this.staticUserId}`, settings, this.getAuthHeaders());
+    // This endpoint is not defined in the new requirements, so I will leave it as is for now.
+    return this.http.post(`/api/saved-settings/${this.staticUserId}`, settings, this.getAuthHeaders());
   }
 
   deleteSavedSetting(settingId: string): Observable<any> {
-    return this.http.delete(`${this.apiBase}/saved-settings/${this.staticUserId}/${settingId}`, this.getAuthHeaders());
+    // This endpoint is not defined in the new requirements, so I will leave it as is for now.
+    return this.http.delete(`/api/saved-settings/${this.staticUserId}/${settingId}`, this.getAuthHeaders());
   }
 
   uploadLogo(file: File): Observable<{ logoUrl: string }> {
+    // This endpoint is not defined in the new requirements, so I will leave it as is for now.
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<{ logoUrl: string }>(`${this.apiBase}/upload-logo/${this.staticUserId}`, formData, this.getAuthHeaders());
+    return this.http.post<{ logoUrl: string }>(`/api/upload-logo/${this.staticUserId}`, formData, this.getAuthHeaders());
   }
 }

@@ -7,7 +7,6 @@ from google.cloud import firestore
 import google.auth
 import google.auth.transport.requests
 from service.storage import upload_gcs_file_from_stream
-from service.utils.utils import validate_hex_color
 import uuid
 
 logger = logging.getLogger(__name__)
@@ -29,7 +28,15 @@ class Settings(BaseModel):
     logoUrl: str
     primaryColor: str
 
-ui_settings_router = APIRouter(prefix="/ui_settings")
+class UpdateSettingsResponse(BaseModel):
+    """Pydantic model for the response of the update_app_settings endpoint."""
+    message: str
+    logo_url: Optional[str] = None
+    brand_name: str
+    color: str
+    user_id: str
+
+ui_settings_router = APIRouter()
 
 @ui_settings_router.get("/get_settings/{user_id}", response_model=Settings)
 def get_settings(user_id: str, db: firestore.Client = Depends(get_firestore_client)):
@@ -42,7 +49,6 @@ def get_settings(user_id: str, db: firestore.Client = Depends(get_firestore_clie
         if doc.exists:
             return doc.to_dict()
         else:
-            # Return default settings if no settings are found for the user
             return Settings(brandName="Default Brand", logoUrl="", primaryColor="#000000")
     except Exception as e:
         logger.error(f"Failed to get settings for user {user_id}: {e}")
