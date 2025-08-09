@@ -23,7 +23,7 @@ export class AppSettingsService {
   }
 
   getSettings(): Observable<AppSettings> {
-    return this.http.get<AppSettings>(`${this.apiBase}/settings/${this.staticUserId}`, this.getAuthHeaders());
+    return this.http.get<AppSettings>(`${this.apiBase}/ui_settings/settings/${this.staticUserId}`, this.getAuthHeaders());
   }
 
   updateSettings(settings: AppSettings): Observable<any> {
