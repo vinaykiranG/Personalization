@@ -17,7 +17,7 @@
     <tbody>
       <tr *ngFor="let setting of savedSettingsList; let i = index">
         <td style="padding: 8px;">
-          <img [src]="setting.logo || './assets/dummy.svg'" alt="Logo" style="height: 40px; width: 40px; object-fit: contain;" />
+          <img [src]="setting.logoUrl || './assets/dummy.svg'" alt="Logo" style="height: 40px; width: 40px; object-fit: contain;" />
         </td>
         <td style="padding: 8px;">{{ setting.brandName }}</td>
         <td style="padding: 8px;">

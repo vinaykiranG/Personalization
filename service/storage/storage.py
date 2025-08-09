@@ -20,7 +20,7 @@ This module provides methods for interacting with Google Cloud Storage.
 import logging
 import os
 import pathlib
-from typing import Optional, Sequence, Union
+from typing import IO, Optional, Sequence, Union
 
 import utils as Utils
 from google.cloud import storage
@@ -81,13 +81,17 @@ def upload_gcs_file(
     destination_file_name: str,
     bucket_name: str,
     overwrite: bool = False,
-) -> None:
+) -> str:
   """Uploads a file to the given GCS bucket.
 
   Args:
     file_path: The path of the file to upload.
     destination_file_name: The name of the file to upload as.
     bucket_name: The name of the bucket to upload the file to.
+    overwrite: Whether to overwrite the file if it already exists.
+
+  Returns:
+    The public URL of the uploaded file.
   """
   storage_client = storage.Client()
   bucket = storage_client.bucket(bucket_name)
@@ -98,6 +102,40 @@ def upload_gcs_file(
   )
 
   logging.info('UPLOAD - Uploaded path "%s".', destination_file_name)
+  return blob.public_url
+
+
+def upload_gcs_file_from_stream(
+    file_stream: IO[bytes],
+    destination_file_name: str,
+    bucket_name: str,
+    overwrite: bool = False,
+) -> str:
+  """Uploads a file stream to the given GCS bucket.
+
+  Args:
+    file_stream: The file stream to upload.
+    destination_file_name: The name of the file to upload as.
+    bucket_name: The name of the bucket to upload the file to.
+    overwrite: Whether to overwrite the file if it already exists.
+
+  Returns:
+    The public URL of the uploaded file.
+  """
+  storage_client = storage.Client()
+  bucket = storage_client.bucket(bucket_name)
+
+  blob = bucket.blob(destination_file_name)
+
+  # Reset stream position to the beginning
+  file_stream.seek(0)
+
+  blob.upload_from_file(
+      file_stream, if_generation_match=None if overwrite else 0
+  )
+
+  logging.info('UPLOAD - Uploaded stream to "%s".', destination_file_name)
+  return blob.public_url
 
 
 def upload_gcs_dir(

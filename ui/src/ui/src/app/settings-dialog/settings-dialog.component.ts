@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { AppSettingsService, AppSettings } from '../services/app-settings.service';
-import { MatDialogModule } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { SavedSettingsDialogComponent } from './saved-settings-dialog/saved-settings-dialog.component';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -31,7 +32,7 @@ export class SettingsDialogComponent implements OnInit {
   brandName: string = '';
   primaryColor: string = '#1976d2';
 
-  constructor(private appSettingsService: AppSettingsService) {}
+  constructor(private appSettingsService: AppSettingsService, private dialog: MatDialog) {}
 
   ngOnInit() {
     this.loadSettings();
@@ -54,45 +55,68 @@ export class SettingsDialogComponent implements OnInit {
     });
   }
 
+  selectedLogoFile: File | null = null;
+
   onLogoSelected(event: any) {
     const file = event.target.files[0];
     if (file) {
-      this.appSettingsService.uploadLogo(file).subscribe({
-        next: (res: any) => {
-          this.logoPreview = res.logoUrl;
-          this.settings.logoUrl = res.logoUrl;
-        },
-        error: () => {
-          this.error = 'Logo upload failed';
-        }
-      });
+      this.selectedLogoFile = file;
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.logoPreview = reader.result as string;
+      };
+      reader.readAsDataURL(file);
     }
   }
 
   saveSettings() {
     this.loading = true;
-    // Only include logoUrl if it is non-empty
-    const updatedSettings: any = {
-      brandName: this.brandName,
-      primaryColor: this.primaryColor
+
+    const save = (logoUrl?: string) => {
+      const settingsToSave: AppSettings = {
+        brandName: this.brandName,
+        primaryColor: this.primaryColor,
+        logoUrl: logoUrl || this.settings.logoUrl,
+      };
+
+      this.appSettingsService.updateSettings(settingsToSave).subscribe({
+        next: () => {
+          this.loading = false;
+        },
+        error: () => {
+          this.error = 'Failed to save settings';
+          this.loading = false;
+        },
+      });
     };
-    if (this.logoPreview && this.logoPreview.trim() !== '') {
-      updatedSettings.logoUrl = this.logoPreview;
+
+    if (this.selectedLogoFile) {
+      this.appSettingsService.uploadLogo(this.selectedLogoFile).subscribe({
+        next: (res) => {
+          save(res.logoUrl);
+        },
+        error: () => {
+          this.error = 'Logo upload failed';
+          this.loading = false;
+        },
+      });
+    } else {
+      save();
     }
-    this.appSettingsService.updateSettings(updatedSettings).subscribe({
-      next: (_: any) => {
-        this.appSettingsService.settingsChanged$.next(updatedSettings);
-        this.loading = false;
-      },
-      error: (_: any) => {
-        this.error = 'Failed to save settings';
-        this.loading = false;
-      }
-    });
   }
 
   openSavedSettingsDialog() {
-    // Implement dialog open logic in component
+    const dialogRef = this.dialog.open(SavedSettingsDialogComponent, {
+      width: '500px',
+      data: { currentSettings: this.settings }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.applied) {
+        this.appSettingsService.settingsChanged$.next(result.settings);
+        this.loadSettings();
+      }
+    });
   }
 
   resetSettings() {

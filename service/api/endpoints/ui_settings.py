@@ -57,38 +57,6 @@ class UpdateSettingsResponse(BaseModel):
 
 ui_settings_router = APIRouter(prefix="/ui_settings")
 
-class AppSettings(BaseModel):
-    """Pydantic model for application settings."""
-    brandName: str
-    logoUrl: str
-    primaryColor: str
-
-@ui_settings_router.get("/settings/{user_id}", response_model=AppSettings)
-def get_app_settings(user_id: str, db_client: firestore.Client = Depends(get_firestore_client)):
-    """
-    Retrieves application settings from Firestore for a given user.
-    """
-    try:
-        # The document ID is static as per the update logic
-        CLIENT_BRANDING_DOC_ID = "branding_profile"
-        settings_doc_ref = db_client.collection(f"users/{user_id}/appSettings").document(CLIENT_BRANDING_DOC_ID)
-
-        doc = settings_doc_ref.get()
-        if doc.exists:
-            settings = doc.to_dict()
-            return AppSettings(
-                brandName=settings.get("brand_name", ""),
-                logoUrl=settings.get("logo_url", ""),
-                primaryColor=settings.get("color", "#1976d2")
-            )
-        else:
-            # Return default settings if no document is found
-            return AppSettings(brandName="", logoUrl="", primaryColor="#1976d2")
-
-    except Exception as e:
-        logger.error(f"Failed to retrieve settings from Firestore for user {user_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve settings: {e}")
-
 @ui_settings_router.post("/update_settings", response_model=UpdateSettingsResponse)
 async def update_app_settings(
     brand_name: str = Form(...),

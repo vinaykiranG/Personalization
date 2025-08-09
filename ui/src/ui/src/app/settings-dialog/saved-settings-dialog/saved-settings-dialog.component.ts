@@ -37,8 +37,7 @@ export class SavedSettingsDialogComponent implements OnInit {
   }
 
   loadSavedSettingsList() {
-    const userId = localStorage.getItem('userId') || '';
-    this.appSettingsService.getSavedSettings(userId).subscribe({
+    this.appSettingsService.getSavedSettings().subscribe({
       next: (list: any[]) => {
         this.savedSettingsList = list;
       },
@@ -49,9 +48,8 @@ export class SavedSettingsDialogComponent implements OnInit {
   }
 
   deleteSavedSetting(index: number) {
-    const userId = localStorage.getItem('userId') || '';
     const settingId = this.savedSettingsList[index].id;
-    this.appSettingsService.deleteSavedSetting(userId, settingId).subscribe({
+    this.appSettingsService.deleteSavedSetting(settingId).subscribe({
       next: () => {
         this.snackBar.open('Deleted saved setting!', 'Close', { duration: 2000 });
         this.savedSettingsList.splice(index, 1);

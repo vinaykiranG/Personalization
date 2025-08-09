@@ -323,3 +323,15 @@ def get_mtls_uri_from_gcs_uri(uri: str):
            "https://storage.mtls.cloud.google.com/my-bucket/path/to/file").
   """
   return uri.replace("gs://", "https://storage.mtls.cloud.google.com/")
+
+
+import re
+import uuid
+
+def validate_hex_color(color_string: str) -> bool:
+    """Validates a hex color string."""
+    return re.match(r'^#(?:[0-9a-fA-F]{3}){1,2}$', color_string) is not None
+
+def generate_id() -> str:
+    """Generates a new unique ID."""
+    return str(uuid.uuid4())

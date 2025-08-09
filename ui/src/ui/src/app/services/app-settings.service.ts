@@ -23,36 +23,18 @@ export class AppSettingsService {
   }
 
   getSettings(): Observable<AppSettings> {
-    return this.http.get<AppSettings>(`${this.apiBase}/ui_settings/settings/${this.staticUserId}`, this.getAuthHeaders());
+    return this.http.get<AppSettings>(`${this.apiBase}/settings/${this.staticUserId}`, this.getAuthHeaders());
   }
 
   updateSettings(settings: AppSettings): Observable<any> {
-    // Validate primaryColor before sending
-    const validHex = /^#[0-9A-Fa-f]{6}$/;
-    let color = settings.primaryColor;
-    if (!color || !validHex.test(color)) {
-      color = '#1976d2';
-    }
-    // Prepare FormData for backend
-    const formData = new FormData();
-    formData.append('brand_name', settings.brandName || '');
-    formData.append('color', color);
-    formData.append('user_id', this.staticUserId);
-    // If logo file is present, append it
-    if (settings.logoFile) {
-      formData.append('logo_file', settings.logoFile);
-    }
+    const { brandName, primaryColor, logoUrl } = settings;
+    const payload = { brandName, primaryColor, logoUrl };
+
     return new Observable(observer => {
-      this.http.post(`${this.apiBase}/ui_settings/update_settings`, formData, this.getAuthHeaders()).subscribe({
+      this.http.put(`${this.apiBase}/settings/${this.staticUserId}`, payload, this.getAuthHeaders()).subscribe({
         next: (res: any) => {
-          // Ensure the response matches AppSettings shape
-          const updated: AppSettings = {
-            brandName: res.brand_name ?? settings.brandName,
-            logoUrl: res.logo_url ?? settings.logoUrl ?? '',
-            primaryColor: res.color ?? settings.primaryColor,
-          };
-          this.settingsChanged$.next(updated);
-          observer.next(updated);
+          this.settingsChanged$.next(settings);
+          observer.next(res);
           observer.complete();
         },
         error: (err) => observer.error(err)
@@ -72,18 +54,9 @@ export class AppSettingsService {
     return this.http.delete(`${this.apiBase}/saved-settings/${this.staticUserId}/${settingId}`, this.getAuthHeaders());
   }
 
-  uploadLogo(file: File): Observable<any> {
+  uploadLogo(file: File): Observable<{ logoUrl: string }> {
     const formData = new FormData();
     formData.append('file', file);
-    return new Observable(observer => {
-      this.http.post<any>(`${this.apiBase}/upload-logo/${this.staticUserId}`, formData, this.getAuthHeaders()).subscribe({
-        next: (res) => {
-          this.settingsChanged$.next({ brandName: '', logoUrl: res.logoUrl, primaryColor: '' });
-          observer.next(res);
-          observer.complete();
-        },
-        error: (err) => observer.error(err)
-      });
-    });
+    return this.http.post<{ logoUrl: string }>(`${this.apiBase}/upload-logo/${this.staticUserId}`, formData, this.getAuthHeaders());
   }
 }
