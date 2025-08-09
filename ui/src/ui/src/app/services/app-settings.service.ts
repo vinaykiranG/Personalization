@@ -12,7 +12,7 @@ export interface AppSettings {
 
 @Injectable({ providedIn: 'root' })
 export class AppSettingsService {
-  private apiBase = '/api/ui_settings'; // Adjusted to new prefix
+  private apiBase = ''; // Adjust if needed
   private staticUserId = 'user123'; // Static user ID for now
   public settingsChanged$ = new Subject<AppSettings>();
 
@@ -24,7 +24,7 @@ export class AppSettingsService {
   }
 
   getSettings(): Observable<AppSettings> {
-    return this.http.get<AppSettings>(`${this.apiBase}/get_settings/${this.staticUserId}`, this.getAuthHeaders());
+    return this.http.get<AppSettings>(`${this.apiBase}/ui_settings/get_settings/${this.staticUserId}`, this.getAuthHeaders());
   }
 
   updateSettings(settings: AppSettings): Observable<any> {
@@ -36,7 +36,7 @@ export class AppSettingsService {
       formData.append('logo_file', settings.logoFile, settings.logoFile.name);
     }
 
-    return this.http.post(`${this.apiBase}/update_settings`, formData, this.getAuthHeaders()).pipe(
+    return this.http.post(`${this.apiBase}/ui_settings/update_settings`, formData, this.getAuthHeaders()).pipe(
       tap((updatedSettings: any) => {
         const newSettings: AppSettings = {
           brandName: updatedSettings.brand_name,
@@ -46,30 +46,5 @@ export class AppSettingsService {
         this.settingsChanged$.next(newSettings);
       })
     );
-  }
-
-  // The following methods are not part of the new requirements, but I will leave them for now.
-  // I will remove them in a future step if they are not needed.
-
-  getSavedSettings(): Observable<any[]> {
-    // This endpoint is not defined in the new requirements, so I will leave it as is for now.
-    return this.http.get<any[]>(`/api/saved-settings/${this.staticUserId}`, this.getAuthHeaders());
-  }
-
-  saveSetting(settings: AppSettings): Observable<any> {
-    // This endpoint is not defined in the new requirements, so I will leave it as is for now.
-    return this.http.post(`/api/saved-settings/${this.staticUserId}`, settings, this.getAuthHeaders());
-  }
-
-  deleteSavedSetting(settingId: string): Observable<any> {
-    // This endpoint is not defined in the new requirements, so I will leave it as is for now.
-    return this.http.delete(`/api/saved-settings/${this.staticUserId}/${settingId}`, this.getAuthHeaders());
-  }
-
-  uploadLogo(file: File): Observable<{ logoUrl: string }> {
-    // This endpoint is not defined in the new requirements, so I will leave it as is for now.
-    const formData = new FormData();
-    formData.append('file', file);
-    return this.http.post<{ logoUrl: string }>(`/api/upload-logo/${this.staticUserId}`, formData, this.getAuthHeaders());
   }
 }
