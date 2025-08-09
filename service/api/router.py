@@ -2,8 +2,8 @@ from api.endpoints import (
     ui_settings,
     app_settings
 )
-from fastapi import routing
-api_router = routing.APIRouter()
+from fastapi import APIRouter
+api_router = APIRouter()
 
 api_router.include_router(
     ui_settings.ui_settings_router, tags=["ui_settings_routes"]
