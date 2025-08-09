@@ -71,38 +71,23 @@ export class SettingsDialogComponent implements OnInit {
 
   saveSettings() {
     this.loading = true;
-
-    const save = (logoUrl?: string) => {
-      const settingsToSave: AppSettings = {
-        brandName: this.brandName,
-        primaryColor: this.primaryColor,
-        logoUrl: logoUrl || this.settings.logoUrl,
-      };
-
-      this.appSettingsService.updateSettings(settingsToSave).subscribe({
-        next: () => {
-          this.loading = false;
-        },
-        error: () => {
-          this.error = 'Failed to save settings';
-          this.loading = false;
-        },
-      });
+    const settingsToSave: AppSettings = {
+      brandName: this.brandName,
+      primaryColor: this.primaryColor,
+      logoUrl: this.settings.logoUrl,
+      logoFile: this.selectedLogoFile ?? undefined,
     };
 
-    if (this.selectedLogoFile) {
-      this.appSettingsService.uploadLogo(this.selectedLogoFile).subscribe({
-        next: (res) => {
-          save(res.logoUrl);
-        },
-        error: () => {
-          this.error = 'Logo upload failed';
-          this.loading = false;
-        },
-      });
-    } else {
-      save();
-    }
+    this.appSettingsService.updateSettings(settingsToSave).subscribe({
+      next: () => {
+        this.loading = false;
+        this.selectedLogoFile = null; // Reset after save
+      },
+      error: () => {
+        this.error = 'Failed to save settings';
+        this.loading = false;
+      },
+    });
   }
 
   openSavedSettingsDialog() {
