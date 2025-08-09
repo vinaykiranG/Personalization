@@ -22,7 +22,7 @@ import os
 import pathlib
 from typing import IO, Optional, Sequence, Union
 
-import utils as Utils
+from .. import utils as Utils
 from google.cloud import storage
 from google.cloud.storage import transfer_manager
 

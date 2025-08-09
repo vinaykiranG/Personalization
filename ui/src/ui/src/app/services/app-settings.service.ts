@@ -12,7 +12,7 @@ export interface AppSettings {
 
 @Injectable({ providedIn: 'root' })
 export class AppSettingsService {
-  private apiBase = ''; // Adjust if needed
+  private apiBase = 'http://localhost:8080'; // Adjust if needed
   private staticUserId = 'user123'; // Static user ID for now
   public settingsChanged$ = new Subject<AppSettings>();
 

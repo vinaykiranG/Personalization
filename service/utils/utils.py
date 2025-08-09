@@ -24,7 +24,7 @@ import pathlib
 import subprocess
 from typing import Optional, Sequence, Union
 
-import config as ConfigService
+from .. import config as ConfigService
 
 
 class TranscriptionService(enum.Enum):
