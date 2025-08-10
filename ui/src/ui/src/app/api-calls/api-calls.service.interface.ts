@@ -215,4 +215,23 @@ export interface ApiCalls {
     gcsFolder: string,
     segmentMarkers: SegmentMarker[]
   ): Observable<string>;
+  settings: SettingsApi;
+}
+
+export interface UserSettings {
+  brandName: string;
+  primaryColor: string;
+  logoData: string | null;
+}
+
+export interface AppSettings {
+  brandName: string;
+  primaryColor: string;
+  logoUrl: string;
+}
+
+export interface SettingsApi {
+  getUserSettings(): Observable<AppSettings>;
+  saveUserSettings(settings: UserSettings): Observable<AppSettings>;
+  deleteUserSettings(): Observable<void>;
 }

@@ -32,6 +32,7 @@ import {
   SegmentMarker,
   VariantTextAsset,
 } from './api-calls.service.interface';
+import { SettingsApiCallService } from './settings-api-calls.service';
 
 @Injectable({
   providedIn: 'root',
@@ -39,7 +40,8 @@ import {
 export class ApiCallsService implements ApiCalls {
   constructor(
     private ngZone: NgZone,
-    private httpClient: HttpClient
+    private httpClient: HttpClient,
+    public settings: SettingsApiCallService
   ) {}
 
   loadPreviousRun(folder: string): string[] {

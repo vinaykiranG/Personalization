@@ -27,6 +27,7 @@ import {
 } from './generation';
 import { PreviewHelper, VideoIntelligence } from './preview';
 import { ScriptUtil } from './script-util';
+import { SettingsManager } from './settings';
 import { StorageManager } from './storage';
 import { StringUtil } from './string-util';
 import {
@@ -37,6 +38,7 @@ import {
   RenderQueue,
   SegmentMarker,
   VariantTextAsset,
+  UserSettings,
 } from './ui/src/app/api-calls/api-calls.service.interface';
 
 function getEncodedUserId() {
@@ -247,6 +249,24 @@ function splitSegment(
     'application/json'
   );
   return String(segmentMarkers[0].av_segment_id);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function getUserSettings() {
+  const settingsManager = new SettingsManager();
+  return settingsManager.getUserSettings();
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function saveUserSettings(settings: UserSettings) {
+  const settingsManager = new SettingsManager();
+  return settingsManager.saveUserSettings(settings);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function deleteUserSettings() {
+  const settingsManager = new SettingsManager();
+  settingsManager.deleteUserSettings();
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
