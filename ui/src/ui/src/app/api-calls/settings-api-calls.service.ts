@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-import { Injectable } from '@angular/core';
-import { from, Observable } from 'rxjs';
+import { Injectable, NgZone } from '@angular/core';
+import { Observable } from 'rxjs';
 import {
   AppSettings,
   SettingsApi,
   UserSettings,
 } from './api-calls.service.interface';
-import { ScriptRunService } from './script-run.service';
 
 /**
  * Service to manage API calls related to user settings.
@@ -30,20 +29,29 @@ import { ScriptRunService } from './script-run.service';
   providedIn: 'root',
 })
 export class SettingsApiCallService implements SettingsApi {
-  constructor(private scriptRunService: ScriptRunService) {}
+  constructor(private ngZone: NgZone) {}
 
   /**
    * Fetches user settings from the backend.
    * @returns An observable of the user's application settings.
    */
   getUserSettings(): Observable<AppSettings> {
-    return from(
-      new Promise<AppSettings>(resolve => {
-        this.scriptRunService
-          .run<AppSettings>('getUserSettings')
-          .then(result => resolve(result));
-      })
-    );
+    return new Observable<AppSettings>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler((appSettings: AppSettings) => {
+          this.ngZone.run(() => {
+            subscriber.next(appSettings);
+            subscriber.complete();
+          });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error('Could not retrieve user settings! Error: ', error);
+          subscriber.error(error);
+        })
+        .getUserSettings();
+    });
   }
 
   /**
@@ -52,13 +60,22 @@ export class SettingsApiCallService implements SettingsApi {
    * @returns An observable of the saved application settings.
    */
   saveUserSettings(settings: UserSettings): Observable<AppSettings> {
-    return from(
-      new Promise<AppSettings>(resolve => {
-        this.scriptRunService
-          .run<AppSettings>('saveUserSettings', settings)
-          .then(result => resolve(result));
-      })
-    );
+    return new Observable<AppSettings>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler((appSettings: AppSettings) => {
+          this.ngZone.run(() => {
+            subscriber.next(appSettings);
+            subscriber.complete();
+          });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error('Could not save user settings! Error: ', error);
+          subscriber.error(error);
+        })
+        .saveUserSettings(settings);
+    });
   }
 
   /**
@@ -66,12 +83,21 @@ export class SettingsApiCallService implements SettingsApi {
    * @returns An observable that completes when the operation is finished.
    */
   deleteUserSettings(): Observable<void> {
-    return from(
-      new Promise<void>(resolve => {
-        this.scriptRunService
-          .run<void>('deleteUserSettings')
-          .then(() => resolve());
-      })
-    );
+    return new Observable<void>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler(() => {
+          this.ngZone.run(() => {
+            subscriber.next();
+            subscriber.complete();
+          });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error('Could not delete user settings! Error: ', error);
+          subscriber.error(error);
+        })
+        .deleteUserSettings();
+    });
   }
 }

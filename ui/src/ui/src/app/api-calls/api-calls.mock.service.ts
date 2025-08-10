@@ -28,6 +28,7 @@ import {
   RenderQueue,
   SegmentMarker,
   VariantTextAsset,
+  UserSettings,
 } from './api-calls.service.interface';
 
 const HORIZONTAL_SAMPLE_FOLDER = 'horizontal.mp4--1234567890123--abcdef';
@@ -41,6 +42,26 @@ export class ApiCallsService implements ApiCalls {
     private ngZone: NgZone,
     private httpClient: HttpClient
   ) {}
+
+  settings = {
+    getUserSettings: () => {
+      return of({
+        brandName: 'MockBrand',
+        primaryColor: '#FF0000',
+        logoUrl: '',
+      });
+    },
+    saveUserSettings: (settings: UserSettings) => {
+      return of({
+        brandName: settings.brandName,
+        primaryColor: settings.primaryColor,
+        logoUrl: '',
+      });
+    },
+    deleteUserSettings: () => {
+      return of(undefined);
+    },
+  };
 
   async loadLocalFile(path: string) {
     const data = await lastValueFrom(
