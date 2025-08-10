@@ -50,6 +50,13 @@ function getEncodedUserId() {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+function getActiveUserEmail() {
+  const email = Session.getActiveUser().getEmail();
+  Logger.log('Active User Email: ' + email);
+  return email;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getRunsFromGcs() {
   return {
     encodedUserId: getEncodedUserId(),
