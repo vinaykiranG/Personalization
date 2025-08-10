@@ -1,0 +1,15 @@
+<header class="app-header mat-elevation-z2">
+  <mat-toolbar color="primary">
+    <span class="brand" routerLink="/app" style="cursor: pointer;">ViGenAiR</span>
+    <span class="spacer"></span>
+    <div class="right" *ngIf="auth.isAuthenticated()">
+      <div class="avatar-wrapper" (mouseenter)="show=true" (mouseleave)="show=false">
+        <img class="avatar" [src]="auth.getCurrentUser()?.picture || 'assets/google_g.svg'" alt="avatar"/>
+        <div class="dropdown" [class.visible]="show">
+          <div class="item">Signed in as <strong>{{ auth.getCurrentUser()?.email }}</strong></div>
+          <button class="logout" (click)="logout()">Logout</button>
+        </div>
+      </div>
+    </div>
+  </mat-toolbar>
+</header>
