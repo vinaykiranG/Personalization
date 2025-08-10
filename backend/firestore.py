@@ -4,8 +4,12 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Dict, Any, Optional, List
 
-from google.cloud import firestore
-from google.oauth2 import service_account
+try:
+    from google.cloud import firestore
+    from google.oauth2 import service_account
+except Exception:
+    firestore = None
+    service_account = None
 
 PROJECT_ID = "demos-dev-467317"
 
@@ -30,12 +34,15 @@ def _to_iso(ts):
 
 
 def is_mock() -> bool:
-    return _MOCK_MODE
+    return _MOCK_MODE or firestore is None
 
 
 @lru_cache(maxsize=1)
 def get_firestore():
     global _MOCK_MODE
+    if firestore is None:
+        _MOCK_MODE = True
+        return None
     credentials_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
     creds = None
     try:
@@ -43,8 +50,11 @@ def get_firestore():
             creds = service_account.Credentials.from_service_account_file(credentials_path)
         elif os.path.exists("/app/backend/service-account.json"):
             creds = service_account.Credentials.from_service_account_file("/app/backend/service-account.json")
+        else:
+            # If no creds present, force mock to avoid metadata server attempts
+            _MOCK_MODE = True
+            return None
         client = firestore.Client(project=PROJECT_ID, credentials=creds)
-        # Defer actual call until used; if client creation succeeded we assume real mode
         return client
     except Exception:
         _MOCK_MODE = True
@@ -104,7 +114,6 @@ def get_latest_user_setting(user_id: str):
         store = _mock_user_store(user_id)
         if not store:
             return None
-        # Sort by createdAt desc
         latest_id = sorted(store.keys(), key=lambda k: store[k]["createdAt"], reverse=True)[0]
         d = store[latest_id]
         return {
