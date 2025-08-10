@@ -14,7 +14,7 @@ from firestore import (
     list_user_settings,
     delete_user_setting,
 )
-from .storage import get_storage, upload_logo_file
+from storage import get_storage, upload_logo_file
 from .utils import validate_hex_color, validate_image_upload
 
 router = APIRouter()
