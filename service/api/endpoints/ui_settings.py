@@ -28,6 +28,9 @@ class Settings(BaseModel):
     logoUrl: str
     primaryColor: str
 
+class SavedSetting(Settings):
+    id: str
+
 class UpdateSettingsResponse(BaseModel):
     """Pydantic model for the response of the update_app_settings endpoint."""
     message: str
@@ -53,6 +56,37 @@ def get_settings(user_id: str, db: firestore.Client = Depends(get_firestore_clie
     except Exception as e:
         logger.error(f"Failed to get settings for user {user_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get settings: {e}")
+
+@ui_settings_router.get("/get_all_settings/{user_id}", response_model=list[SavedSetting])
+def get_all_settings(user_id: str, db: firestore.Client = Depends(get_firestore_client)):
+    """
+    Fetches all saved settings for a user from Firestore.
+    """
+    try:
+        settings_ref = db.collection(f"users/{user_id}/appSettings")
+        docs = settings_ref.stream()
+        settings_list = []
+        for doc in docs:
+            setting_data = doc.to_dict()
+            setting_data['id'] = doc.id
+            settings_list.append(setting_data)
+        return settings_list
+    except Exception as e:
+        logger.error(f"Failed to get all settings for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get all settings: {e}")
+
+@ui_settings_router.delete("/delete_setting/{user_id}/{setting_id}", status_code=204)
+def delete_setting(user_id: str, setting_id: str, db: firestore.Client = Depends(get_firestore_client)):
+    """
+    Deletes a saved setting for a user from Firestore.
+    """
+    try:
+        doc_ref = db.collection(f"users/{user_id}/appSettings").document(setting_id)
+        doc_ref.delete()
+        return {"message": "Setting deleted successfully"}
+    except Exception as e:
+        logger.error(f"Failed to delete setting {setting_id} for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete setting: {e}")
 
 @ui_settings_router.post("/update_settings")
 async def update_app_settings(

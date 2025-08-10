@@ -27,6 +27,14 @@ export class AppSettingsService {
     return this.http.get<AppSettings>(`${this.apiBase}/ui_settings/get_settings/${this.staticUserId}`, this.getAuthHeaders());
   }
 
+  getSavedSettings(): Observable<(AppSettings & { id: string })[]> {
+    return this.http.get<(AppSettings & { id: string })[]>(`${this.apiBase}/ui_settings/get_all_settings/${this.staticUserId}`, this.getAuthHeaders());
+  }
+
+  deleteSavedSetting(settingId: string): Observable<any> {
+    return this.http.delete(`${this.apiBase}/ui_settings/delete_setting/${this.staticUserId}/${settingId}`, this.getAuthHeaders());
+  }
+
   updateSettings(settings: AppSettings): Observable<any> {
     const formData = new FormData();
     formData.append('brand_name', settings.brandName);

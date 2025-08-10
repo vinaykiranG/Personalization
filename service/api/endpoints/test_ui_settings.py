@@ -53,3 +53,39 @@ def test_update_app_settings(client):
     assert call_args[0]['brandName'] == 'Test Brand'
     assert call_args[0]['primaryColor'] == '#123456'
     assert 'last_updated' in call_args[0]
+
+def test_get_all_settings(client):
+    # Mock the Firestore client's stream method
+    mock_doc1 = MagicMock()
+    mock_doc1.id = "setting1"
+    mock_doc1.to_dict.return_value = {"brandName": "Brand 1", "logoUrl": "url1", "primaryColor": "#111"}
+
+    mock_doc2 = MagicMock()
+    mock_doc2.id = "setting2"
+    mock_doc2.to_dict.return_value = {"brandName": "Brand 2", "logoUrl": "url2", "primaryColor": "#222"}
+
+    mock_db_client.collection.return_value.stream.return_value = [mock_doc1, mock_doc2]
+
+    # Make the request
+    response = client.get("/ui_settings/get_all_settings/test_user")
+
+    # Assert the response
+    assert response.status_code == 200
+    response_data = response.json()
+    assert len(response_data) == 2
+    assert response_data[0]['id'] == 'setting1'
+    assert response_data[0]['brandName'] == 'Brand 1'
+    assert response_data[1]['id'] == 'setting2'
+    assert response_data[1]['brandName'] == 'Brand 2'
+
+def test_delete_setting(client):
+    # Make the request
+    response = client.delete("/ui_settings/delete_setting/test_user/setting123")
+
+    # Assert the response
+    assert response.status_code == 204
+
+    # Assert that Firestore's `delete` method was called
+    mock_db_client.collection.assert_called_with("users/test_user/appSettings")
+    mock_db_client.collection.return_value.document.assert_called_with("setting123")
+    mock_db_client.collection.return_value.document.return_value.delete.assert_called_once()
