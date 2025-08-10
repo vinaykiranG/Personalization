@@ -1,97 +1,107 @@
 /**
  * @OnlyCurrentDoc
- *
- * The above comment directs Apps Script to limit the scope of file
- * access for this script to only the current document containing the script.
- * This is a good security practice.
+ * This comment directs Apps Script to limit the scope of file access for this script.
  */
 
-// Global constant for the root folder in Google Drive
-const LOGO_FOLDER_NAME = 'App Logos';
+// Global constant for the root folder in Google Drive for logos
+const LOGO_FOLDER_NAME = 'App Personalization Logos';
 
 /**
- * Handles GET requests.
- * Routes requests based on the 'action' parameter.
+ * Handles all POST requests for the web app.
+ * Acts as a router to delegate tasks to specific helper functions based on an 'action' parameter.
  *
- * @param {object} e The event parameter for a web app script.
- * @return {ContentService.TextOutput} The JSON response.
+ * @param {object} e The event parameter from the POST request.
+ * @return {ContentService.TextOutput} A JSON object representing the result of the operation.
+ */
+/**
+ * Handles GET requests for read-only operations.
+ * @param {object} e The event parameter from the GET request.
+ * @return {ContentService.TextOutput} A JSON object with the requested data.
  */
 function doGet(e) {
   try {
-    // Ensure user is authenticated for all GET requests
-    getUserId();
-    const action = e.parameter.action;
-
-    if (!action) {
-      // Default action: get the current user's settings
-      return sendResponse(getSettings());
+    const userId = Session.getActiveUser().getEmail();
+    if (!userId) {
+      throw new Error('Authentication failed. Please log in to continue.');
     }
 
+    const action = e.parameter.action;
+    let result;
+
+    // Route GET requests based on the 'action' parameter.
     switch (action) {
       case 'getSaved':
-        return sendResponse(getSavedSettings());
+        result = getSavedSettingsList();
+        break;
       default:
-        return sendError('Invalid GET action.');
+        // Per requirements, no action specified should get the current settings.
+        result = loadSettings();
+        break;
     }
+
+    return sendResponse(result);
+
   } catch (error) {
-    return sendError('An error occurred: ' + error.message, 401);
+    console.error('Error in doGet: ' + error.toString());
+    return sendError('An unexpected error occurred: ' + error.message);
   }
 }
 
 /**
- * Handles POST requests.
- * Routes requests based on the 'action' parameter.
+ * Handles all POST requests for the web app.
+ * Acts as a router to delegate tasks to specific helper functions based on an 'action' parameter.
  *
- * @param {object} e The event parameter for a web app script.
- * @return {ContentService.TextOutput} The JSON response.
+ * @param {object} e The event parameter from the POST request.
+ * @return {ContentService.TextOutput} A JSON object representing the result of the operation.
  */
 function doPost(e) {
   try {
-     // Ensure user is authenticated for all POST requests
-    getUserId();
-    const action = e.parameter.action;
-
-    // Handle file upload separately as its postData is not JSON
-    if (action === 'uploadLogo') {
-      return sendResponse(uploadLogo(e));
+    // All actions require an authenticated user.
+    const userId = Session.getActiveUser().getEmail();
+    if (!userId) {
+      throw new Error('Authentication failed. Please log in to continue.');
     }
 
-    // For all other actions, parse the JSON payload
+    const action = e.parameter.action;
+
+    // The 'uploadLogo' action sends file data, not JSON, so it's handled separately.
+    if (action === 'uploadLogo') {
+      const result = uploadLogo(e.postData);
+      return sendResponse(result);
+    }
+
+    // All other actions are expected to send a JSON payload.
     const postData = JSON.parse(e.postData.contents);
+    let result;
 
     switch (action) {
       case 'updateSettings':
-        return sendResponse(updateSettings(postData));
+        result = saveSettings(postData.settings);
+        break;
       case 'save':
-        return sendResponse(saveSetting(postData));
+        result = saveNewSetting(postData.setting);
+        break;
       case 'delete':
-        return sendResponse(deleteSetting(postData));
+        result = deleteSavedSetting(postData.index);
+        break;
       default:
-        return sendError('Invalid POST action.');
+        // If the action is not recognized, return an error.
+        return sendError('Invalid POST action specified.');
     }
+
+    return sendResponse(result);
+
   } catch (error) {
-    return sendError('An error occurred: ' + error.message, 500);
+    // Log any errors for debugging purposes and return a generic error message.
+    console.error('Error in doPost: ' + error.toString());
+    return sendError('An unexpected error occurred: ' + error.message);
   }
 }
 
 /**
- * Retrieves the current user's email.
- * Throws an error if the user is not logged in or doesn't have an email.
- * @return {string} The user's email.
- */
-function getUserId() {
-  const email = Session.getActiveUser().getEmail();
-  if (!email) {
-    // This will be caught by the try-catch blocks in doGet/doPost
-    throw new Error('User authentication failed. Please ensure you are logged in.');
-  }
-  return email;
-}
-
-/**
- * Creates and returns a standard JSON response.
- * @param {object} data The data payload to send.
- * @return {ContentService.TextOutput}
+ * Helper function to create a standardized JSON success response.
+ * @param {object} data The data payload to be included in the response.
+ * @return {ContentService.TextOutput} The JSON response object.
  */
 function sendResponse(data) {
   const response = { status: 'success', data: data };
@@ -100,139 +110,128 @@ function sendResponse(data) {
 }
 
 /**
- * Creates and returns a standard JSON error response.
- * @param {string} message The error message.
- * @param {number} [statusCode=400] The HTTP status code to simulate.
- * @return {ContentService.TextOutput}
+ * Helper function to create a standardized JSON error response.
+ * @param {string} message The error message to be included in the response.
+ * @return {ContentService.TextOutput} The JSON response object.
  */
-function sendError(message, statusCode = 400) {
-   // While Apps Script doesn't truly support status codes, this can be useful for the client.
-  const response = { status: 'error', message: message, statusCode: statusCode };
+function sendError(message) {
+  const response = { status: 'error', message: message };
   return ContentService.createTextOutput(JSON.stringify(response))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// --- Settings Functions ---
+// --- Helper Functions ---
 
 /**
- * Gets the current user's personalized settings from UserProperties.
- * @return {object} An object with brandName, primaryColor, and logoUrl.
+ * Retrieves the user's brandName, primaryColor, and logoUrl from PropertiesService.
+ * Returns default values if properties do not exist.
+ * @return {object} An object containing the user's settings.
  */
-function getSettings() {
+function loadSettings() {
   const userProperties = PropertiesService.getUserProperties();
   const settings = userProperties.getProperties(['brandName', 'primaryColor', 'logoUrl']);
 
-  // Provide default values if properties are not set
-  settings.brandName = settings.brandName || 'Default Brand';
-  settings.primaryColor = settings.primaryColor || '#2196F3'; // A default blue color
+  // Provide default values for a better user experience
+  settings.brandName = settings.brandName || 'My Brand';
+  settings.primaryColor = settings.primaryColor || '#3F51B5'; // Indigo color
   settings.logoUrl = settings.logoUrl || '';
 
   return settings;
 }
 
 /**
- * Updates the user's brandName and primaryColor in UserProperties.
- * @param {object} data The data from the POST request, containing brandName and primaryColor.
- * @return {object} The updated settings.
+ * Takes a settings object and saves it to the user's PropertiesService.
+ * @param {object} settings An object containing brandName and primaryColor.
+ * @return {object} The newly saved settings.
  */
-function updateSettings(data) {
+function saveSettings(settings) {
+  if (!settings || !settings.brandName || !settings.primaryColor) {
+    throw new Error('Invalid settings object provided.');
+  }
   const userProperties = PropertiesService.getUserProperties();
   userProperties.setProperties({
-    'brandName': data.brandName,
-    'primaryColor': data.primaryColor
+    'brandName': settings.brandName,
+    'primaryColor': settings.primaryColor
   });
-  return getSettings();
+  // Return the full, current settings to confirm the save
+  return loadSettings();
 }
 
-// --- Saved Settings List Functions ---
-
 /**
- * Gets the list of saved settings for the user from UserProperties.
- * @return {Array} The array of saved settings.
+ * Retrieves the list of saved settings from PropertiesService.
+ * @return {Array} An array of saved setting objects.
  */
-function getSavedSettings() {
+function getSavedSettingsList() {
   const userProperties = PropertiesService.getUserProperties();
-  const savedSettingsJson = userProperties.getProperty('savedSettings');
-  // If no settings are saved, return an empty array
-  return savedSettingsJson ? JSON.parse(savedSettingsJson) : [];
+  const json = userProperties.getProperty('savedSettingsList');
+  return json ? JSON.parse(json) : [];
 }
 
 /**
- * Adds a new setting to the user's list of saved settings.
- * @param {object} settingToSave The setting object to add to the list.
+ * (Private) Saves an array of settings to PropertiesService as a JSON string.
+ * This is a helper function to avoid code duplication.
+ * @param {Array} list The array of saved settings to store.
+ */
+function _saveSavedSettingsList(list) {
+  const userProperties = PropertiesService.getUserProperties();
+  userProperties.setProperty('savedSettingsList', JSON.stringify(list));
+}
+
+/**
+ * Adds a new setting object to the saved settings list in PropertiesService.
+ * @param {object} setting The new setting object to add to the list.
  * @return {Array} The updated list of saved settings.
  */
-function saveSetting(settingToSave) {
-  const savedSettings = getSavedSettings();
-  savedSettings.push(settingToSave);
-
-  const userProperties = PropertiesService.getUserProperties();
-  userProperties.setProperty('savedSettings', JSON.stringify(savedSettings));
-
-  return savedSettings;
+function saveNewSetting(setting) {
+  if (!setting || typeof setting !== 'object') {
+    throw new Error('A valid setting object must be provided.');
+  }
+  const savedList = getSavedSettingsList();
+  savedList.push(setting);
+  _saveSavedSettingsList(savedList);
+  return savedList;
 }
 
 /**
- * Deletes a saved setting from the list by its index.
- * @param {object} data The data from the POST request, containing the index to delete.
+ * Deletes a setting from the saved list at a given index.
+ * @param {number} index The index of the setting to delete.
  * @return {Array} The updated list of saved settings.
  */
-function deleteSetting(data) {
-  const index = data.index;
-  const savedSettings = getSavedSettings();
-
-  if (index !== undefined && index >= 0 && index < savedSettings.length) {
-    savedSettings.splice(index, 1);
-    const userProperties = PropertiesService.getUserProperties();
-    userProperties.setProperty('savedSettings', JSON.stringify(savedSettings));
-  } else {
+function deleteSavedSetting(index) {
+  const savedList = getSavedSettingsList();
+  if (index === undefined || index < 0 || index >= savedList.length) {
     throw new Error('Invalid index provided for deletion.');
   }
-
-  return savedSettings;
+  savedList.splice(index, 1);
+  // Save the modified list back to properties
+  _saveSavedSettingsList(savedList);
+  return savedList;
 }
 
-// --- Logo Upload Function ---
-
 /**
- * Handles the logo file upload.
- * Saves the file to a structured folder in Google Drive and returns the public URL.
- * @param {object} e The POST request event object containing the file blob.
- * @return {object} An object containing the new logoUrl.
+ * Handles logo uploads to Google Drive.
+ * @param {object} fileData The file blob from the POST request.
+ * @return {object} An object containing the public URL of the new logo.
  */
-function uploadLogo(e) {
-  const userId = getUserId();
-  const fileBlob = e.postData; // The entire postData is the blob for file uploads
+function uploadLogo(fileData) {
+  const userId = Session.getActiveUser().getEmail();
 
   // 1. Get or create the root folder
   let rootFolder;
   const rootFolders = DriveApp.getFoldersByName(LOGO_FOLDER_NAME);
-  if (rootFolders.hasNext()) {
-    rootFolder = rootFolders.next();
-  } else {
-    rootFolder = DriveApp.createFolder(LOGO_FOLDER_NAME);
-  }
+  rootFolder = rootFolders.hasNext() ? rootFolders.next() : DriveApp.createFolder(LOGO_FOLDER_NAME);
 
   // 2. Get or create the user-specific subfolder
   let userFolder;
   const userFolders = rootFolder.getFoldersByName(userId);
-  if (userFolders.hasNext()) {
-    userFolder = userFolders.next();
-     // Optional: Clean up old logos if necessary
-  } else {
-    userFolder = rootFolder.createFolder(userId);
-  }
+  userFolder = userFolders.hasNext() ? userFolders.next() : rootFolder.createFolder(userId);
 
-  // 3. Create the file from the blob
-  const logoFile = userFolder.createFile(fileBlob);
-
-  // 4. Set the file to be publicly accessible (anyone with the link can view)
+  // 3. Save the file and make it public
+  const logoFile = userFolder.createFile(fileData);
   logoFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
-  // 5. Construct a reliable, direct public URL
+  // 4. Construct the public URL and save it to properties
   const logoUrl = `https://drive.google.com/uc?export=view&id=${logoFile.getId()}`;
-
-  // 6. Save the new URL to user properties
   const userProperties = PropertiesService.getUserProperties();
   userProperties.setProperty('logoUrl', logoUrl);
 
