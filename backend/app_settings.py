@@ -7,7 +7,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, UploadFile, File, status
 from pydantic import BaseModel, Field
 
-from .firestore import (
+from firestore import (
     get_firestore,
     save_user_setting,
     get_latest_user_setting,
