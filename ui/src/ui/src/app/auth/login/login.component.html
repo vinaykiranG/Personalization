@@ -1,0 +1,19 @@
+<div class="login-page">
+  <div class="left-art"></div>
+  <div class="card">
+    <h1>Login</h1>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <label>Email</label>
+      <input formControlName="email" placeholder="you@example.com" />
+      <label>Password</label>
+      <input type="password" formControlName="password" placeholder="••••••••" />
+      <div *ngIf="error" class="error">{{ error }}</div>
+      <button type="submit">Login</button>
+    </form>
+    <div class="separator">or</div>
+    <div id="gsi-button"></div>
+    <div class="register-link">
+      <a routerLink="/register">Create an account</a>
+    </div>
+  </div>
+</div>
