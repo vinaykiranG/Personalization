@@ -9,7 +9,7 @@
 .card input { padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; }
 .card button { padding:10px; border:none; border-radius:10px; background:#2F6BE6; color:#fff; font-weight:600; cursor:pointer; }
 .separator { text-align:center; color:#6b7280; margin:12px 0; }
-#error { color: #ef4444; }
+.error { color: #ef4444; }
 .register-link { margin-top: 8px; text-align:center; }
 #gsi-button { display:flex; justify-content:center; }
 @media (max-width: 900px) { .left-art { display:none; } .card { flex: 1; } }
