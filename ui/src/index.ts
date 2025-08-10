@@ -27,7 +27,6 @@ import {
 } from './generation';
 import { PreviewHelper, VideoIntelligence } from './preview';
 import { ScriptUtil } from './script-util';
-import { SettingsManager } from './settings';
 import { StorageManager } from './storage';
 import { StringUtil } from './string-util';
 import {
@@ -47,13 +46,6 @@ function getEncodedUserId() {
     : Session.getTemporaryActiveUserKey();
 
   return StringUtil.gcsSanitise(encodedUserId);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getActiveUserEmail() {
-  const email = Session.getActiveUser().getEmail();
-  Logger.log('Active User Email: ' + email);
-  return email;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -258,22 +250,79 @@ function splitSegment(
   return String(segmentMarkers[0].av_segment_id);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getUserSettings() {
-  const settingsManager = new SettingsManager();
-  return settingsManager.getUserSettings();
+const SPREADSHEET_NAME = 'Vigenair_User_Settings';
+const SHEET_NAME = 'Sheet1';
+const HEADER = ['userId', 'settingName', 'settingValue'];
+
+function getOrCreateSettingsSheet(): GoogleAppsScript.Spreadsheet.Sheet {
+  const files = DriveApp.getFilesByName(SPREADSHEET_NAME);
+  let spreadsheet;
+  if (files.hasNext()) {
+    spreadsheet = SpreadsheetApp.openById(files.next().getId());
+  } else {
+    spreadsheet = SpreadsheetApp.create(SPREADSHEET_NAME);
+  }
+
+  let sheet = spreadsheet.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(SHEET_NAME);
+    sheet.appendRow(HEADER);
+  }
+
+  return sheet;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function saveUserSettings(settings: UserSettings) {
-  const settingsManager = new SettingsManager();
-  return settingsManager.saveUserSettings(settings);
+/**
+ * Retrieves settings for the current user from the Google Sheet.
+ * @return {object} An object containing the user's saved settings.
+ */
+function loadSettingsFromSheet() {
+  const userId = Session.getActiveUser().getEmail();
+  const sheet = getOrCreateSettingsSheet();
+  const data = sheet.getDataRange().getValues();
+  const userSettings: Record<string, string> = {};
+
+  // Start from row 1 to skip header
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === userId) { // Check if the row belongs to the current user
+      const settingName = data[i][1];
+      const settingValue = data[i][2];
+      userSettings[settingName] = settingValue;
+    }
+  }
+  return userSettings;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function deleteUserSettings() {
-  const settingsManager = new SettingsManager();
-  settingsManager.deleteUserSettings();
+/**
+ * Saves or updates settings for the current user in the Google Sheet.
+ * @param {object} settings The settings object to save.
+ * @return {object} A success status object.
+ */
+function saveSettingsToSheet(settings: Record<string, unknown>) {
+  const userId = Session.getActiveUser().getEmail();
+  const sheet = getOrCreateSettingsSheet();
+  const data = sheet.getDataRange().getValues();
+  const userRows = [];
+
+  // Find all rows belonging to the current user
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][0] === userId) {
+      userRows.push(i + 1); // Store row number (1-indexed)
+    }
+  }
+
+  // Delete old settings for the user to prevent duplicates
+  for (const rowIndex of userRows) {
+    sheet.deleteRow(rowIndex);
+  }
+
+  // Append new settings
+  const newRows = Object.entries(settings).map(([key, value]) => [userId, key, String(value)]);
+  if (newRows.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, newRows.length, 3).setValues(newRows);
+  }
+
+  return { status: 'success', message: 'Settings saved to sheet.' };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

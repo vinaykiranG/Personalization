@@ -75,6 +75,9 @@ import { SmartFramingDialog } from './framing-dialog/framing-dialog.component';
 import { SegmentsListComponent } from './segments-list/segments-list.component';
 import { VideoComboComponent } from './video-combo/video-combo.component';
 
+// This tells TypeScript about the google object provided by Apps Script
+declare let google: any;
+
 type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
 
 export type FramingDialogData = {
@@ -170,13 +173,17 @@ export class AppComponent {
   renderQueueName = '';
 
   // UI Personalization properties
-  brandName = '';
+  settings = {
+    brandName: '',
+    primaryColor: '#3F51B5',
+    logoUrl: '',
+    logoData: '' // To hold base64 data for upload
+  };
   logoPreview = '';
-  primaryColor = '#3f51b5';
   currentBrandName = '';
   currentLogo = '';
   currentPrimaryColor = '#3f51b5';
-  fillWithPreviousSettings = false;
+
   displayObjectTracking = true;
   moveCropArea = false;
   weightsTextIndex = 3;
@@ -228,9 +235,6 @@ export class AppComponent {
   evalPromptPlaceholder?: ElementRef<HTMLDivElement>;
   @ViewChild(FileChooserComponent) fileChooserComponent!: FileChooserComponent;
 
-  showSavedSettingsModal = false;
-  savedSettingsList: Array<{ brandName: string; logo: string; primaryColor: string }> = [];
-
   constructor(
     private apiCallsService: ApiCallsService,
     private snackBar: MatSnackBar,
@@ -238,7 +242,7 @@ export class AppComponent {
   ) {
     this.getPreviousRuns();
     this.getWebAppUrl();
-    this.loadPersonalizationSettings();
+    this.onLoadSettingsFromSheet(); // Load settings on init
 
     // Allow locally served app to process query params.
     // Production env (Apps Script) is handled via ngAfterViewInit()
@@ -253,8 +257,6 @@ export class AppComponent {
   }
 
   ngOnInit() {
-    // The constructor now handles loading personalization settings.
-    // The saved settings list functionality has been removed in favor of a single user setting.
   }
 
   ngAfterViewInit() {
