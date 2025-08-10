@@ -63,3 +63,30 @@ $ui-theme: mat.define-light-theme((
 // Alternatively, you can import and @include the theme mixins for each component
 // that you are using.
 @include mat.all-component-themes($ui-theme);
+
+/* src/app/app.component.css */
+.app-title {
+  font-weight: 500;
+}
+
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.user-photo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.user-email {
+  margin-right: 16px;
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.8);
+}

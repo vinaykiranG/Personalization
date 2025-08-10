@@ -15,9 +15,16 @@
  */
 
 import { provideHttpClient } from '@angular/common/http';
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { environment } from '../environments/environment';
+import {
+  GoogleLoginProvider,
+  SocialAuthServiceConfig,
+  SocialLoginModule,
+} from '@abacritt/angularx-social-login';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -25,5 +32,22 @@ export const appConfig: ApplicationConfig = {
     provideAnimations(),
     provideHttpClient(),
     ...environment.providers,
+    importProvidersFrom(SocialLoginModule),
+    {
+      provide: 'SocialAuthServiceConfig',
+      useValue: {
+        autoLogin: false,
+        providers: [
+          {
+            id: GoogleLoginProvider.PROVIDER_ID,
+            provider: new GoogleLoginProvider('YOUR_GOOGLE_CLIENT_ID'),
+          },
+        ],
+        onError: err => {
+          console.error(err);
+        },
+      } as SocialAuthServiceConfig,
+    },
+    provideRouter(routes, withComponentInputBinding()),
   ],
 };
