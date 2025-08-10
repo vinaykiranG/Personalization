@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, Inject, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -11,6 +11,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { SavedSettingsDialogComponent } from './saved-settings-dialog/saved-settings-dialog.component';
+import { AppSettings, AppSettingsService } from '../services/app-settings.service';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-settings-dialog',
@@ -37,39 +39,34 @@ export class SettingsDialogComponent implements OnInit {
   logoPreview = '';
   primaryColor = '#3f51b5';
   currentBrandName = '';
-  currentLogo = '';
+  currentLogoUrl = '';
   currentPrimaryColor = '#3f51b5';
-  fillWithPreviousSettings = false;
+  selectedLogoFile: File | null = null;
+  isLoading = false;
 
   @ViewChild('logoInput') logoInput!: ElementRef;
 
   constructor(
     private snackBar: MatSnackBar,
     public dialogRef: MatDialogRef<SettingsDialogComponent>,
-    private dialog: MatDialog
-  ) {
+    private dialog: MatDialog,
+    private appSettingsService: AppSettingsService
+  ) {}
+
+  ngOnInit() {
     this.loadPersonalizationSettings();
   }
-
-  ngOnInit() {}
 
   openSavedSettingsDialog() {
     this.dialog.open(SavedSettingsDialogComponent, {
       width: '600px',
-      data: { currentSettings: {
-        brandName: this.brandName,
-        logo: this.logoPreview,
-        primaryColor: this.primaryColor,
-      } },
     }).afterClosed().subscribe(result => {
       if (result?.applied && result.settings) {
         this.brandName = result.settings.brandName;
-        this.logoPreview = result.settings.logo;
+        this.logoPreview = result.settings.logoUrl;
         this.primaryColor = result.settings.primaryColor;
-        this.currentBrandName = result.settings.brandName;
-        this.currentLogo = result.settings.logo;
-        this.currentPrimaryColor = result.settings.primaryColor;
-        this.applyDynamicTheme();
+        // After applying a saved setting, we immediately save it as the current setting
+        this.saveSettings();
       }
     });
   }
@@ -77,6 +74,7 @@ export class SettingsDialogComponent implements OnInit {
   onLogoSelected(event: any) {
     const file = event.target.files[0];
     if (file) {
+      this.selectedLogoFile = file;
       const reader = new FileReader();
       reader.onload = (e) => {
         this.logoPreview = e.target?.result as string;
@@ -86,60 +84,90 @@ export class SettingsDialogComponent implements OnInit {
   }
 
   saveSettings() {
-    const settings = {
-      brandName: this.brandName,
-      logo: this.logoPreview,
-      primaryColor: this.primaryColor,
+    this.isLoading = true;
+    const saveAppSettings = (logoUrl: string) => {
+      const settings: AppSettings = {
+        brandName: this.brandName,
+        logoUrl: logoUrl,
+        primaryColor: this.primaryColor,
+      };
+
+      this.appSettingsService.saveCurrentSettings(settings)
+        .pipe(finalize(() => this.isLoading = false))
+        .subscribe({
+          next: (updatedSettings) => {
+            this.updateCurrentSettings(updatedSettings);
+            this.snackBar.open('Settings saved successfully!', 'Close', { duration: 3000 });
+            this.applyDynamicTheme();
+            this.dialogRef.close({ updated: true });
+          },
+          error: (err) => {
+            this.snackBar.open('Failed to save settings.', 'Close', { duration: 3000 });
+            console.error(err);
+          }
+        });
     };
-    localStorage.setItem('uiPersonalizationSettings', JSON.stringify(settings));
-    let list = this.getSavedSettingsList();
-    list.push(settings);
-    localStorage.setItem('uiSavedSettingsList', JSON.stringify(list));
-    this.snackBar.open('Settings saved successfully!', 'Close', {
-      duration: 3000,
-      horizontalPosition: 'center',
-    });
-    this.currentBrandName = this.brandName;
-    this.currentLogo = this.logoPreview;
-    this.currentPrimaryColor = this.primaryColor;
-    this.applyDynamicTheme();
-    this.dialogRef.close();
-  }
 
-  resetSettings() {
-    localStorage.removeItem('uiPersonalizationSettings');
-    this.brandName = '';
-    this.logoPreview = '';
-    this.primaryColor = '#3f51b5';
-    this.currentBrandName = '';
-    this.currentLogo = '';
-    this.currentPrimaryColor = '#3f51b5';
-    this.fillWithPreviousSettings = false;
-    this.applyDynamicTheme();
-    this.snackBar.open('Settings reset to default!', 'Close', {
-      duration: 3000,
-      horizontalPosition: 'center',
-    });
-    this.dialogRef.close();
-  }
-
-  getSavedSettingsList() {
-    const list = localStorage.getItem('uiSavedSettingsList');
-    return list ? JSON.parse(list) : [];
-  }
-
-  loadPersonalizationSettings() {
-    const savedSettings = localStorage.getItem('uiPersonalizationSettings');
-    if (savedSettings) {
-      const settings = JSON.parse(savedSettings);
-      this.currentBrandName = settings.brandName || '';
-      this.currentLogo = settings.logo || '';
-      this.currentPrimaryColor = settings.primaryColor || '#3f51b5';
-      this.applyDynamicTheme();
+    if (this.selectedLogoFile) {
+      this.appSettingsService.uploadLogo(this.selectedLogoFile).subscribe({
+        next: (response) => {
+          saveAppSettings(response.logoUrl);
+        },
+        error: (err) => {
+          this.isLoading = false;
+          this.snackBar.open('Failed to upload logo.', 'Close', { duration: 3000 });
+          console.error(err);
+        }
+      });
+    } else {
+      saveAppSettings(this.currentLogoUrl);
     }
   }
 
+  resetSettings() {
+    this.isLoading = true;
+    const defaultSettings: AppSettings = {
+      brandName: 'Default Brand',
+      logoUrl: '',
+      primaryColor: '#3f51b5',
+    };
+    this.appSettingsService.saveCurrentSettings(defaultSettings)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (updatedSettings) => {
+          this.updateCurrentSettings(updatedSettings);
+          this.snackBar.open('Settings reset to default!', 'Close', { duration: 3000 });
+          this.applyDynamicTheme();
+          this.dialogRef.close({ updated: true });
+        },
+        error: (err) => {
+          this.snackBar.open('Failed to reset settings.', 'Close', { duration: 3000 });
+        }
+      });
+  }
+
+  loadPersonalizationSettings() {
+    this.isLoading = true;
+    this.appSettingsService.getSettings()
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe(settings => {
+        this.updateCurrentSettings(settings);
+        // Also populate the form fields
+        this.brandName = settings.brandName;
+        this.logoPreview = settings.logoUrl;
+        this.primaryColor = settings.primaryColor;
+        this.applyDynamicTheme();
+      });
+  }
+
+  private updateCurrentSettings(settings: AppSettings) {
+    this.currentBrandName = settings.brandName || 'Default Brand';
+    this.currentLogoUrl = settings.logoUrl || '';
+    this.currentPrimaryColor = settings.primaryColor || '#3f51b5';
+  }
+
   applyDynamicTheme() {
+    // This function remains the same as it manipulates the DOM directly.
     let styleElement = document.getElementById('dynamic-theme-styles') as HTMLStyleElement;
     if (!styleElement) {
       styleElement = document.createElement('style');
