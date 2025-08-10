@@ -15,8 +15,10 @@
  */
 
 import { ApiCallsService } from '../app/api-calls/api-calls.service';
+import { provideRouter } from '@angular/router';
+import { routes } from '../app/app.routes';
 
 export const environment = {
   production: true,
-  providers: [{ provide: ApiCallsService }],
+  providers: [{ provide: ApiCallsService }, provideRouter(routes)],
 };
