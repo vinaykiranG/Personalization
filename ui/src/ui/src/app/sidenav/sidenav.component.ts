@@ -11,7 +11,7 @@ import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AppSettingsService } from '../services/app-settings.service';
-import { SavedSettingsDialogComponent } from '../settings-dialog/saved-settings-dialog/saved-settings-dialog.component';
+import { SettingsListComponent } from '../settings-list/settings-list.component';
 
 @Component({
   selector: 'app-sidenav',
@@ -28,7 +28,7 @@ import { SavedSettingsDialogComponent } from '../settings-dialog/saved-settings-
     MatTooltipModule,
     MatSnackBarModule,
     MatCardModule,
-    SavedSettingsDialogComponent,
+    SettingsListComponent,
   ],
   templateUrl: './sidenav.component.html',
   styleUrl: './sidenav.component.css',

@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Observable } from 'rxjs';
-import { Setting } from '../../models/setting.model';
-import { AppSettingsService } from '../../services/app-settings.service';
-import { SettingsDialogComponent } from '../settings-dialog.component';
+import { Setting } from '../models/setting.model';
+import { AppSettingsService } from '../services/app-settings.service';
+import { SettingsDialogComponent } from '../settings-dialog/settings-dialog.component';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -26,9 +26,9 @@ import { MatTableModule } from '@angular/material/table';
     MatDialogModule,
     MatTableModule,
   ],
-  templateUrl: './saved-settings-dialog.component.html',
+  templateUrl: './settings-list.component.html',
 })
-export class SavedSettingsDialogComponent implements OnInit {
+export class SettingsListComponent implements OnInit {
   public settings$: Observable<Setting[]>;
   public displayedColumns: string[] = ['logo', 'name', 'color', 'status', 'actions'];
 

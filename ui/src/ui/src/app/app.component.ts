@@ -57,7 +57,8 @@ import { CONFIG } from '../../../config';
 import { StringUtil } from '../../../string-util';
 import { TimeUtil } from '../../../time-util';
 import { ApiCallsService } from './api-calls/api-calls.service';
-import { AppSettingsService, AppSettings } from './services/app-settings.service';
+import { AppSettingsService } from './services/app-settings.service';
+import { Setting } from './models/setting.model';
 import {
   AbcdType,
   AvSegment,
@@ -153,24 +154,6 @@ export class AppComponent implements OnInit {
   combinationStatus: ProcessStatus = 'hourglass_top';
   segmentsStatus: ProcessStatus = 'hourglass_top';
   // ...existing code...
-  openSettingsDialog() {
-    const dialogRef = this.dialog.open(SavedSettingsDialogComponent, {
-      width: '800px',
-      maxHeight: '90vh'
-    });
-    dialogRef.afterClosed().subscribe(result => {
-      if (result?.applied && result.settings) {
-        this.applySettings(result.settings);
-      }
-    });
-  }
-
-  applySettings(settings: any) {
-    this.logoUrl = settings.logoUrl;
-    this.brandName = settings.brandName;
-    this.primaryColor = settings.primaryColor;
-    // Optionally trigger change detection or update theme
-  }
   }
   // ...existing code continues...
   prompt = '';
@@ -261,23 +244,20 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
-    // On app load, fetch latest settings from backend
-    this.appSettingsService.getSettings().subscribe(settings => {
-      this.applySettings(settings);
-    });
-    // Listen for changes (e.g., after save)
-    this.appSettingsService.settingsChanged$.subscribe(settings => {
-      this.applySettings(settings);
+    this.appSettingsService.appliedSetting$.subscribe(setting => {
+      if (setting) {
+        this.applySettings(setting);
+      }
     });
   }
 
-  applySettings(settings: AppSettings) {
-    if (settings.primaryColor) {
-      document.documentElement.style.setProperty('--theme-color', settings.primaryColor);
-      this.primaryColor = settings.primaryColor;
+  applySettings(settings: Setting) {
+    if (settings.color) {
+      document.documentElement.style.setProperty('--theme-color', settings.color);
+      this.primaryColor = settings.color;
     }
-    this.logoUrl = settings.logoUrl || 'https://services.google.com/fh/files/misc/vigenair_logo.png';
-    this.brandName = settings.brandName || 'ViGenAiR';
+    this.logoUrl = settings.logo || 'https://services.google.com/fh/files/misc/vigenair_logo.png';
+    this.brandName = settings.name || 'ViGenAiR';
   }
 
   ngAfterViewInit() {
