@@ -1,63 +1,66 @@
-# backend/services/firestore_service.py
 
 import os
-from unittest.mock import MagicMock
-import uuid
+from google.cloud import firestore
+from dotenv import load_dotenv
 
-# --- Mocking GCP credentials ---
-# This service is mocked because we don't have access to live GCP credentials.
-# In a real environment, you would initialize a Firestore client here.
+load_dotenv()
 
-# --- Mock Database ---
-# A simple in-memory dictionary to simulate Firestore.
-_MOCK_DB = {
-    "settings": {
-        "OZ6p1jNlNkYwVeBaLPCa": {
-            "__data__": {
-                "brandName": "ViGenAir",
-                "logoUrl": "https://storage.googleapis.com/vigenair-logo-space/eeccca0750dc564ea55c897f90f4fb99.png",
-                "primaryColor": "#000000"
-            },
-            "saved_settings": {
-                "mock-setting-id-1": {
-                    "brandName": "Saved ViGenAir",
-                    "logoUrl": "https://storage.googleapis.com/vigenair-logo-space/saved.png",
-                    "primaryColor": "#ffffff"
-                }
-            }
-        }
-    }
-}
 
-def get_user_settings(user_id: str) -> dict | None:
-    """Fetches user settings from Firestore."""
-    return _MOCK_DB["settings"].get(user_id, {}).get("__data__")
+# Ensure Firestore emulator is always used if FIRESTORE_EMULATOR_HOST is set
+FIRESTORE_EMULATOR_HOST = os.getenv('FIRESTORE_EMULATOR_HOST')
+if FIRESTORE_EMULATOR_HOST:
+    os.environ['FIRESTORE_EMULATOR_HOST'] = FIRESTORE_EMULATOR_HOST
+    print(f"[Firestore] Using emulator at {FIRESTORE_EMULATOR_HOST}")
+
+PROJECT_ID = os.getenv('PROJECT_ID')
+COLLECTION_NAME = os.getenv('COLLECTION_NAME', 'Settings')
+
+def get_firestore_client():
+    return firestore.Client(project=PROJECT_ID)
+
+def get_user_settings(brand_name: str) -> dict | None:
+    db = get_firestore_client()
+    doc_ref = db.collection(COLLECTION_NAME).document(brand_name)
+    doc = doc_ref.get()
+    return doc.to_dict() if doc.exists else None
 
 def set_user_settings(user_id: str, settings: dict):
-    """Saves user settings to Firestore."""
-    if user_id not in _MOCK_DB["settings"]:
-        _MOCK_DB["settings"][user_id] = {"__data__": {}, "saved_settings": {}}
-    _MOCK_DB["settings"][user_id]["__data__"] = settings
+    db = get_firestore_client()
+    # Use user_id as the document name for consistency
+    doc_ref = db.collection(COLLECTION_NAME).document(user_id)
+    doc_ref.set(settings, merge=True)
 
 def get_saved_settings(user_id: str) -> list[dict]:
-    """Fetches all saved settings for a user."""
-    saved_settings = _MOCK_DB["settings"].get(user_id, {}).get("saved_settings", {})
-    return [{"id": k, **v} for k, v in saved_settings.items()]
+    db = get_firestore_client()
+    settings_ref = db.collection(COLLECTION_NAME)
+    docs = settings_ref.stream()
+    return [{'id': doc.id, **doc.to_dict()} for doc in docs]
 
-def save_setting(user_id: str, settings: dict) -> str:
-    """Saves a new setting to the saved_settings subcollection."""
-    if user_id not in _MOCK_DB["settings"]:
-        _MOCK_DB["settings"][user_id] = {"__data__": {}, "saved_settings": {}}
-
-    new_id = f"mock-setting-id-{uuid.uuid4()}"
-    _MOCK_DB["settings"][user_id]["saved_settings"][new_id] = settings
-    return new_id
+def save_setting(user_id: str, settings: dict, setting_id: str = None) -> str:
+    db = get_firestore_client()
+    settings_ref = db.collection(COLLECTION_NAME).document(user_id).collection('saved_settings')
+    if setting_id:
+        doc_ref = settings_ref.document(setting_id)
+        doc_ref.set(settings, merge=True)
+        return setting_id
+    else:
+        doc_ref = settings_ref.document()
+        doc_ref.set(settings)
+        return doc_ref.id
 
 def delete_saved_setting(user_id: str, setting_id: str):
-    """Deletes a saved setting."""
-    if user_id in _MOCK_DB["settings"] and setting_id in _MOCK_DB["settings"][user_id]["saved_settings"]:
-        del _MOCK_DB["settings"][user_id]["saved_settings"][setting_id]
+    db = get_firestore_client()
+    doc_ref = db.collection(COLLECTION_NAME)
+    doc_ref.delete()
 
 def get_saved_setting_by_id(user_id: str, setting_id: str) -> dict | None:
-    """Fetches a single saved setting by its ID."""
-    return _MOCK_DB["settings"].get(user_id, {}).get("saved_settings", {}).get(setting_id)
+    db = get_firestore_client()
+    doc_ref = db.collection(COLLECTION_NAME)
+    doc = doc_ref.get()
+    return doc.to_dict() if doc.exists else None
+
+def get_saved_setting_by_id(user_id: str, setting_id: str) -> dict | None:
+    db = get_firestore_client()
+    doc_ref = db.collection(COLLECTION_NAME)
+    doc = doc_ref.get()
+    return doc.to_dict() if doc.exists else None

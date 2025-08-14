@@ -5,15 +5,11 @@
   </button>
 </h2>
 <div mat-dialog-content class="settings-container">
-  <div style="margin-bottom: 1rem;">
-    <button mat-raised-button color="primary" (click)="openSavedSettingsDialog()">
-      Saved Settings
-    </button>
-  </div>
+  
   <mat-divider style="margin: 1rem 0;"></mat-divider>
   <div class="logo-section" style="text-align: center;">
     <img
-      [src]="logoPreview || './assets/dummy.svg'"
+      [src]="logoPreview"
       alt="Logo"
       style="max-height: 80px; margin-bottom: 1rem;"
     /> <br>
@@ -24,6 +20,10 @@
   <mat-form-field appearance="fill" style="width: 90%;">
     <mat-label>Brand Name</mat-label>
     <input matInput [(ngModel)]="brandName" />
+  </mat-form-field>
+  <mat-form-field appearance="fill" style="width: 90%; margin-top: 1em;">
+    <mat-label>Description</mat-label>
+    <input matInput [(ngModel)]="description" />
   </mat-form-field>
   <mat-divider style="margin: 1rem 0;"></mat-divider>
   <div class="colorPickerSec">
@@ -38,6 +38,14 @@
     />
   </div>
   <mat-divider style="margin: 1rem 0;"></mat-divider>
+</div>
+<div *ngIf="savedSettingsList?.length > 0" style="margin-top: 2em;">
+  <h3>Saved Settings</h3>
+  <ul>
+    <li *ngFor="let setting of savedSettingsList">
+      <strong>{{ setting.brandName }}</strong> - {{ setting.primaryColor }} - {{ setting.description }}
+    </li>
+  </ul>
 </div>
 <mat-dialog-actions style="justify-content: center; gap: 1em;">
   <button mat-raised-button color="primary" (click)="saveSettings()">

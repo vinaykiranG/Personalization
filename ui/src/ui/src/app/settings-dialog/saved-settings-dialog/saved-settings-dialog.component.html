@@ -1,44 +1,82 @@
-<h2 mat-dialog-title>
-  Saved Settings
-  <button mat-icon-button mat-dialog-close style="float: right;">
-    <mat-icon>close</mat-icon>
-  </button>
-</h2>
-<div mat-dialog-content style="overflow: auto; width: 100%; height: 300px;">
-  <table style="width:100%; border-collapse: collapse; margin-bottom: 1rem;">
-    <thead>
-      <tr>
-        <th style="text-align:left; padding: 8px;">Logo</th>
-        <th style="text-align:left; padding: 8px;">Name</th>
-        <th style="text-align:left; padding: 8px;">Color</th>
-        <th style="text-align:left; padding: 8px;">Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let setting of savedSettingsList; let i = index">
-        <td style="padding: 8px;">
-          <img [src]="setting.logoUrl || './assets/dummy.svg'" alt="Logo" style="height: 40px; width: 40px; object-fit: contain;" />
+<div mat-dialog-content class="saved-settings-dialog-modal">
+  <div class="dialog-header">
+    <h2 class="dialog-title">Saved Settings</h2>
+    <div class="new-settings-btn-container">
+    <button mat-raised-button color="primary" class="new-settings-btn" (click)="createNewSetting()">
+      <mat-icon [color]="'black'">add</mat-icon> New Settings
+    </button>
+  </div>
+    <button mat-icon-button class="close-dialog-btn" (click)="closeDialog()" style="position:absolute;top:12px;right:12px;">
+      <mat-icon style="color: black;">close</mat-icon>
+    </button>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading saved settings...</p>
+  </div>
+
+  <div *ngIf="!loading && savedSettingsList.length === 0" class="no-data">
+    <mat-icon [color]="'black'">settings</mat-icon>
+    <p>No saved settings found.</p>
+    <p class="hint">Create and save settings to see them here.</p>
+  </div>
+
+  <div *ngIf="!loading && savedSettingsList.length > 0" class="settings-table-container">
+    <table mat-table [dataSource]="savedSettingsList" class="mat-elevation-z2 settings-table">
+      <!-- Logo Column -->
+      <ng-container matColumnDef="logo">
+        <th mat-header-cell *matHeaderCellDef> Logo </th>
+        <td mat-cell *matCellDef="let setting">
+          <img [src]="setting.logoUrl || 'https://services.google.com/fh/files/misc/vigenair_logo.png'"
+               alt="Logo"
+               class="logo-preview"
+               style="width:20px;height:2p0x;"
+               onerror="this.src='https://services.google.com/fh/files/misc/vigenair_logo.png'">
         </td>
-        <td style="padding: 8px;">{{ setting.brandName }}</td>
-        <td style="padding: 8px;">
-          <span style="display:inline-block; width:24px; height:24px; border-radius:50%; border:1px solid #ccc; vertical-align:middle; background:{{setting.primaryColor}}"></span>
-          <span style="margin-left:8px;">{{ setting.primaryColor }}</span>
+      </ng-container>
+
+      <!-- Brand Column -->
+      <ng-container matColumnDef="brandName">
+        <th mat-header-cell *matHeaderCellDef> Brand </th>
+        <td mat-cell *matCellDef="let setting">{{ setting.brandName }}</td>
+      </ng-container>
+
+      <!-- Color Column -->
+      <ng-container matColumnDef="primaryColor">
+        <th mat-header-cell *matHeaderCellDef> Color </th>
+        <td mat-cell *matCellDef="let setting">
+          <span class="color-preview" [style.backgroundColor]="setting.primaryColor"></span>
+          {{ setting.primaryColor }}
         </td>
-        <td style="padding: 8px;">
-          <button mat-icon-button color="warn" (click)="deleteSavedSetting(i)" matTooltip="Delete">
-            <mat-icon>delete</mat-icon>
+      </ng-container>
+
+      <!-- Description Column -->
+      <ng-container matColumnDef="description">
+        <th mat-header-cell *matHeaderCellDef> Description </th>
+        <td mat-cell *matCellDef="let setting">{{ setting.description }}</td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef> Actions </th>
+        <td mat-cell *matCellDef="let setting; let i = index">
+          <button mat-icon-button color="primary" (click)="editSetting(i)" matTooltip="Edit Setting">
+            <mat-icon style="color: black;">edit</mat-icon>
           </button>
-          <button mat-icon-button color="primary" (click)="applySavedSetting(i)" matTooltip="Apply">
-            <mat-icon>check_circle</mat-icon>
+          <button mat-icon-button color="warn" (click)="deleteSavedSetting(i)" matTooltip="Delete Setting">
+            <mat-icon style="color: black;">delete</mat-icon>
+          </button>
+          <button mat-icon-button color="accent" (click)="applySavedSetting(i)" matTooltip="Apply Setting">
+            <mat-icon style="color: black;">check_circle</mat-icon>
           </button>
         </td>
-      </tr>
-      <tr *ngIf="!savedSettingsList || savedSettingsList.length === 0">
-        <td colspan="4" style="text-align:center; padding: 16px;">No saved settings.</td>
-      </tr>
-    </tbody>
-  </table>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="['logo', 'brandName', 'primaryColor', 'description', 'actions']"></tr>
+      <tr mat-row *matRowDef="let row; columns: ['logo', 'brandName', 'primaryColor', 'description', 'actions'];"></tr>
+    </table>
+  </div>
 </div>
-<mat-dialog-actions style="justify-content: flex-end; padding-right: 1rem;">
-  <button mat-button (click)="closeDialog()">Close</button>
-</mat-dialog-actions>

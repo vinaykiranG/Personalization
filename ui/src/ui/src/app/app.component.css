@@ -1,3 +1,16 @@
+/* Theme color variable for background, etc. */
+/* Theme color variable for background, etc. */
+:root {
+  --theme-color: #1976d2;
+}
+
+html, body, mat-sidenav-content {
+  background-color: var(--theme-color) !important;
+}
+
+mat-toolbar {
+  background-color: var(--theme-color) !important;
+}
 /*
 Copyright 2024 Google LLC
 

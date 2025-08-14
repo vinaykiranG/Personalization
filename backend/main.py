@@ -7,7 +7,9 @@ app = FastAPI()
 # CORS configuration
 origins = [
     "http://localhost:4200",
-    "http://localhost:8080", # Adding this just in case, based on user's error log
+    "http://127.0.0.1:8000",
+    "http://0.0.0.0:8000",
+    "http://localhost:8000" # Adding this just in case, based on user's error log
 ]
 
 app.add_middleware(
@@ -18,7 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(settings.router, prefix="/api")
+app.include_router(settings.router)
 
 @app.get("/")
 def read_root():

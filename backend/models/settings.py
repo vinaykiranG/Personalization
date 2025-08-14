@@ -6,6 +6,7 @@ class AppSettings(BaseModel):
     brandName: str = Field(..., max_length=50)
     logoUrl: Optional[str] = None
     primaryColor: Color
+    description: Optional[str] = None
 
 class SavedAppSettings(AppSettings):
     id: str
@@ -19,6 +20,7 @@ class SaveSettingsPayload(BaseModel):
     brandName: str = Field(..., max_length=50)
     logoUrl: Optional[str] = None
     primaryColor: Color
+    description: Optional[str] = None
 
 class UploadLogoResponse(BaseModel):
     logoUrl: str

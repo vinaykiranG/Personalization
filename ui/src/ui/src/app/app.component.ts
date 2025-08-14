@@ -16,7 +16,7 @@
 
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, inject, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, ViewChild, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -57,6 +57,7 @@ import { CONFIG } from '../../../config';
 import { StringUtil } from '../../../string-util';
 import { TimeUtil } from '../../../time-util';
 import { ApiCallsService } from './api-calls/api-calls.service';
+import { AppSettingsService, AppSettings } from './services/app-settings.service';
 import {
   AbcdType,
   AvSegment,
@@ -75,6 +76,7 @@ import { SmartFramingDialog } from './framing-dialog/framing-dialog.component';
 import { SegmentsListComponent } from './segments-list/segments-list.component';
 import { VideoComboComponent } from './video-combo/video-combo.component';
 import { SettingsDialogComponent } from './settings-dialog/settings-dialog.component';
+import { SavedSettingsDialogComponent } from './settings-dialog/saved-settings-dialog/saved-settings-dialog.component';
 
 type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
 
@@ -121,14 +123,12 @@ export type FramingDialogData = {
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
-export class AppComponent {
-  // Removed settingsSidenav logic; now using dialog
+export class AppComponent implements OnInit {
+  // UI personalization properties
+  logoUrl: string = '';
+  brandName: string = '';
+  primaryColor: string = '#1976d2';
 
-  openSettingsDialog() {
-    this.dialog.open(SettingsDialogComponent, {
-      width: '800px',
-    });
-  }
   loading = false;
   generatingVariants = false;
   rendering = false;
@@ -152,9 +152,27 @@ export class AppComponent {
   analysisStatus: ProcessStatus = 'hourglass_top';
   combinationStatus: ProcessStatus = 'hourglass_top';
   segmentsStatus: ProcessStatus = 'hourglass_top';
-  canvas?: CanvasRenderingContext2D;
-  frameInterval?: number;
-  currentSegmentId?: number;
+  // ...existing code...
+  openSettingsDialog() {
+    const dialogRef = this.dialog.open(SavedSettingsDialogComponent, {
+      width: '800px',
+      maxHeight: '90vh'
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.applied && result.settings) {
+        this.applySettings(result.settings);
+      }
+    });
+  }
+
+  applySettings(settings: any) {
+    this.logoUrl = settings.logoUrl;
+    this.brandName = settings.brandName;
+    this.primaryColor = settings.primaryColor;
+    // Optionally trigger change detection or update theme
+  }
+  }
+  // ...existing code continues...
   prompt = '';
   selectedAbcdType: AbcdType = 'awareness';
   evalPrompt = CONFIG.vertexAi.abcdBusinessObjectives.awareness.promptPart;
@@ -203,10 +221,8 @@ export class AppComponent {
   segmentSplitting = false;
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
-  @ViewChild('previewVideoElem')
-  previewVideoElem!: ElementRef<HTMLVideoElement>;
-  @ViewChild('previewTrackElem')
-  previewTrackElem!: ElementRef<HTMLTrackElement>;
+  @ViewChild('previewVideoElem') previewVideoElem!: ElementRef<HTMLVideoElement>;
+  @ViewChild('previewTrackElem') previewTrackElem!: ElementRef<HTMLTrackElement>;
   @ViewChild('videoUploadPanel') videoUploadPanel!: MatExpansionPanel;
   @ViewChild('videoMagicPanel') videoMagicPanel!: MatExpansionPanel;
   @ViewChild('magicCanvas') magicCanvas!: ElementRef<HTMLCanvasElement>;
@@ -214,23 +230,20 @@ export class AppComponent {
   @ViewChild('segmentModeToggle') segmentModeToggle!: MatButtonToggleGroup;
   @ViewChild('videosFilterToggle') videosFilterToggle!: MatSlideToggle;
   @ViewChild('renderQueueSidenav') renderQueueSidenav!: MatSidenav;
-  @ViewChild('renderQueueButtonSpan')
-  renderQueueButtonSpan!: ElementRef<HTMLSpanElement>;
+  @ViewChild('renderQueueButtonSpan') renderQueueButtonSpan!: ElementRef<HTMLSpanElement>;
   @ViewChild('reorderSegmentsToggle') reorderSegmentsToggle?: MatSlideToggle;
   @ViewChild('previewToggleGroup') previewToggleGroup!: MatButtonToggleGroup;
-  @ViewChild('canvasDragElement')
-  canvasDragElement?: ElementRef<HTMLDivElement>;
+  @ViewChild('canvasDragElement') canvasDragElement?: ElementRef<HTMLDivElement>;
   @ViewChild('renderFormatsToggle') renderFormatsToggle!: MatButtonToggleGroup;
-  @ViewChild('evalPromptTextarea')
-  evalPromptTextarea?: ElementRef<HTMLTextAreaElement>;
-  @ViewChild('evalPromptPlaceholder')
-  evalPromptPlaceholder?: ElementRef<HTMLDivElement>;
+  @ViewChild('evalPromptTextarea') evalPromptTextarea?: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('evalPromptPlaceholder') evalPromptPlaceholder?: ElementRef<HTMLDivElement>;
   @ViewChild(FileChooserComponent) fileChooserComponent!: FileChooserComponent;
 
   constructor(
     private apiCallsService: ApiCallsService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private appSettingsService: AppSettingsService
   ) {
     this.getPreviousRuns();
     this.getWebAppUrl();
@@ -245,6 +258,26 @@ export class AppComponent {
         }
       });
     }
+  }
+
+  ngOnInit() {
+    // On app load, fetch latest settings from backend
+    this.appSettingsService.getSettings().subscribe(settings => {
+      this.applySettings(settings);
+    });
+    // Listen for changes (e.g., after save)
+    this.appSettingsService.settingsChanged$.subscribe(settings => {
+      this.applySettings(settings);
+    });
+  }
+
+  applySettings(settings: AppSettings) {
+    if (settings.primaryColor) {
+      document.documentElement.style.setProperty('--theme-color', settings.primaryColor);
+      this.primaryColor = settings.primaryColor;
+    }
+    this.logoUrl = settings.logoUrl || 'https://services.google.com/fh/files/misc/vigenair_logo.png';
+    this.brandName = settings.brandName || 'ViGenAiR';
   }
 
   ngAfterViewInit() {
