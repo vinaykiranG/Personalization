@@ -1,15 +1,20 @@
-import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { Observable } from 'rxjs';
+import { Setting } from '../../models/setting.model';
 import { AppSettingsService } from '../../services/app-settings.service';
-import { Component, Inject, OnInit } from '@angular/core';
+import { SettingsDialogComponent } from '../settings-dialog.component';
+import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatCardModule } from '@angular/material/card';
+import { MatTableModule } from '@angular/material/table';
+
 
 @Component({
-  selector: 'app-saved-settings-dialog',
+  selector: 'app-settings-list',
   standalone: true,
   imports: [
     CommonModule,
@@ -19,55 +24,57 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
     MatSnackBarModule,
     MatCardModule,
     MatDialogModule,
+    MatTableModule,
   ],
   templateUrl: './saved-settings-dialog.component.html',
 })
 export class SavedSettingsDialogComponent implements OnInit {
-  savedSettingsList: Array<{ id: string; brandName: string; logoUrl: string; primaryColor: string }> = [];
+  public settings$: Observable<Setting[]>;
+  public displayedColumns: string[] = ['logo', 'name', 'color', 'status', 'actions'];
 
   constructor(
-    private snackBar: MatSnackBar,
-    public dialogRef: MatDialogRef<SavedSettingsDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { currentSettings: any },
-    private appSettingsService: AppSettingsService
-  ) { }
-
-  ngOnInit() {
-    this.loadSavedSettingsList();
+    public appSettingsService: AppSettingsService,
+    private dialog: MatDialog
+  ) {
+    this.settings$ = this.appSettingsService.settings$;
   }
 
-  loadSavedSettingsList() {
-    this.appSettingsService.getSavedSettings().subscribe({
-      next: (list: any[]) => {
-        this.savedSettingsList = list;
-      },
-      error: () => {
-        this.snackBar.open('Failed to load saved settings', 'Close', { duration: 2000 });
+  ngOnInit(): void {
+    this.appSettingsService.getSettings();
+  }
+
+  openSettingsDialog(setting?: Setting): void {
+    const isEditMode = !!setting;
+
+    const dialogRef = this.dialog.open<SettingsDialogComponent, Setting | undefined, Partial<Setting>>(
+      SettingsDialogComponent,
+      {
+        width: '450px',
+        data: setting,
+        disableClose: true
+      }
+    );
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        if (isEditMode && setting) {
+          const updatedSetting: Setting = { ...setting, ...result, isDeleted: false, isApplied: setting.isApplied, id: setting.id };
+          this.appSettingsService.updateSetting(updatedSetting).subscribe();
+        } else {
+          this.appSettingsService.createSetting(result as Omit<Setting, 'id' | 'isApplied' | 'isDeleted'>).subscribe();
+        }
       }
     });
   }
 
-  deleteSavedSetting(index: number) {
-    const settingId = this.savedSettingsList[index].id;
-    this.appSettingsService.deleteSavedSetting(settingId).subscribe({
-      next: () => {
-        this.snackBar.open('Deleted saved setting!', 'Close', { duration: 2000 });
-        this.savedSettingsList.splice(index, 1);
-      },
-      error: () => {
-        this.snackBar.open('Failed to delete setting', 'Close', { duration: 2000 });
-      }
-    });
+  onApply(settingId: string): void {
+    this.appSettingsService.applySetting(settingId).subscribe();
   }
 
-  applySavedSetting(index: number) {
-    const setting = this.savedSettingsList[index];
-    localStorage.setItem('uiPersonalizationSettings', JSON.stringify(setting));
-    this.snackBar.open('Applied saved setting!', 'Close', { duration: 2000 });
-    this.dialogRef.close({ applied: true, settings: setting });
-  }
-
-  closeDialog() {
-    this.dialogRef.close();
+  onDelete(settingId: string): void {
+    // Confirmation dialog is a good practice here
+    if (confirm('Are you sure you want to delete this setting?')) {
+      this.appSettingsService.deleteSetting(settingId).subscribe();
+    }
   }
 }

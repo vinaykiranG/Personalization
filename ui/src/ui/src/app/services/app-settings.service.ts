@@ -1,107 +1,107 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, Subject } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { tap, catchError, map } from 'rxjs/operators';
+import { Setting } from '../models/setting.model';
 
-export interface AppSettings {
-  brandName: string;
-  logoUrl: string;
-  primaryColor: string;
-  description?: string;
-  logoFile?: File;
-}
- 
-
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root'
+})
 export class AppSettingsService {
-  private apiBase = 'http://localhost:8000';
-  private staticUserId = 'Google'; // Use as user ID, not brand name
-  public settingsChanged$ = new Subject<AppSettings>();
+  // Base URL for the backend API. Adjust as needed.
+  private readonly apiUrl = '/api/settings';
+
+  // Private BehaviorSubject to hold the state.
+  private readonly _settings = new BehaviorSubject<Setting[]>([]);
+
+  // Public observable that components can subscribe to.
+  public readonly settings$ = this._settings.asObservable();
+
+  public readonly appliedSetting$ = this.settings$.pipe(
+    map(settings => settings.find(s => s.isApplied))
+  );
 
   constructor(private http: HttpClient) {}
 
-  private getAuthHeaders() {
-    return { 
-      headers: new HttpHeaders({
-        'X-User-Id': this.staticUserId  // Fix: Use X-User-Id instead
+  /**
+   * Fetches all non-deleted settings from the backend and updates the state.
+   */
+  getSettings(): void {
+    this.http.get<Setting[]>(this.apiUrl).pipe(
+      tap(settings => this._settings.next(settings)),
+      catchError(this.handleError)
+    ).subscribe();
+  }
+
+  /**
+   * Creates a new setting.
+   * @param settingData The data for the new setting.
+   * @returns An observable of the newly created setting.
+   */
+  createSetting(settingData: Omit<Setting, 'id' | 'isApplied' | 'isDeleted'>): Observable<Setting> {
+    return this.http.post<Setting>(this.apiUrl, settingData).pipe(
+      tap(newSetting => {
+        const currentState = this._settings.getValue();
+        this._settings.next([...currentState, newSetting]);
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Updates an existing setting.
+   * @param setting The setting object with updated values.
+   * @returns An observable of the updated setting.
+   */
+  updateSetting(setting: Setting): Observable<Setting> {
+    return this.http.put<Setting>(`${this.apiUrl}/${setting.id}`, setting).pipe(
+      tap(updatedSetting => {
+        const currentState = this._settings.getValue();
+        const updatedSettings = currentState.map(s => s.id === updatedSetting.id ? updatedSetting : s);
+        this._settings.next(updatedSettings);
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Applies a specific setting, making it the active one.
+   * @param settingId The ID of the setting to apply.
+   * @returns An observable of the updated state of all settings.
+   */
+  applySetting(settingId: string): Observable<Setting[]> {
+    return this.http.put<Setting[]>(`${this.apiUrl}/${settingId}`, { isApplied: true }).pipe(
+      tap(allSettings => {
+        // The backend should return the full updated list after applying.
+        this._settings.next(allSettings);
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Performs a soft delete on a setting.
+   * @param settingId The ID of the setting to delete.
+   * @returns An observable that completes on success.
+   */
+  deleteSetting(settingId: string): Observable<void> {
+    // Optimistic UI update
+    const currentState = this._settings.getValue();
+    const updatedSettings = currentState.filter(s => s.id !== settingId);
+    this._settings.next(updatedSettings);
+
+    return this.http.put<void>(`${this.apiUrl}/${settingId}`, { isDeleted: true }).pipe(
+      catchError(err => {
+        // Revert state on error
+        this._settings.next(currentState);
+        return this.handleError(err);
       })
-    };
-  }
-
-  getSettings(): Observable<AppSettings> {
-    return this.http.get<AppSettings>(
-      `${this.apiBase}/ui_settings/get_settings/${this.staticUserId}`, // Use staticUserId
-      this.getAuthHeaders()
     );
   }
 
-  getSavedSettings(): Observable<(AppSettings & { id: string; description?: string })[]> {
-    return this.http.get<(AppSettings & { id: string; description?: string })[]>(
-      `${this.apiBase}/ui_settings/get_all_settings/${this.staticUserId}`,
-      this.getAuthHeaders()
-    );
-  }
-
-  saveSetting(settings: AppSettings, logoUrl?: string): Observable<any> {
-    const payload = {
-      brandName: settings.brandName,
-      primaryColor: settings.primaryColor,
-      logoUrl: logoUrl || settings.logoUrl,
-      description: settings.description || ''
-    };
-    return this.http.post(
-      `${this.apiBase}/ui_settings/save_setting/${this.staticUserId}`,
-      payload,
-      this.getAuthHeaders()
-    );
-  }
-
-  deleteSavedSetting(settingId: string): Observable<any> {
-    return this.http.delete(
-      `${this.apiBase}/ui_settings/delete_setting/${this.staticUserId}/${settingId}`, // Use staticUserId
-      this.getAuthHeaders()
-    );
-  }
-
-  updateSettings(settings: AppSettings): Observable<any> {
-    const formData = new FormData();
-    formData.append('brand_name', settings.brandName);
-    formData.append('color', settings.primaryColor);
-    if (settings.logoFile) {
-      formData.append('logo_file', settings.logoFile, settings.logoFile.name);
-    }
-
-    return this.http.post(`${this.apiBase}`, formData, this.getAuthHeaders()).pipe(
-      tap((updatedSettings: any) => {
-        const newSettings: AppSettings = {
-          brandName: updatedSettings.brandName,
-          logoUrl: updatedSettings.logoUrl,
-          primaryColor: updatedSettings.primaryColor,
-        };
-        this.settingsChanged$.next(newSettings);
-      })
-    );
-  }
-
-  updateSavedSetting(settingId: string, settings: AppSettings): Observable<any> {
-    const updateData = {
-      brandName: settings.brandName,
-      primaryColor: settings.primaryColor,
-      logoUrl: settings.logoUrl,
-      description: settings.description || ''
-    };
-    return this.http.put(
-      `${this.apiBase}/ui_settings/update_saved_setting/${this.staticUserId}/${settingId}`,
-      updateData,
-      this.getAuthHeaders()
-    );
-  }
-
-  // Get specific saved setting
-  getSavedSetting(settingId: string): Observable<AppSettings & { id: string }> {
-    return this.http.get<AppSettings & { id: string }>(
-      `${this.apiBase}/ui_settings/get_saved_setting/${this.staticUserId}/${settingId}`, 
-      this.getAuthHeaders()
-    );
+  private handleError(error: any): Observable<never> {
+    console.error('An error occurred in AppSettingsService:', error);
+    // In a real app, you might use a more sophisticated error handling strategy
+    return throwError(() => new Error('Something bad happened; please try again later.'));
   }
 }

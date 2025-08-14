@@ -10,6 +10,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { AppSettingsService } from '../services/app-settings.service';
+import { SavedSettingsDialogComponent } from '../settings-dialog/saved-settings-dialog/saved-settings-dialog.component';
 
 @Component({
   selector: 'app-sidenav',
@@ -26,139 +28,38 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatTooltipModule,
     MatSnackBarModule,
     MatCardModule,
+    SavedSettingsDialogComponent,
   ],
   templateUrl: './sidenav.component.html',
   styleUrl: './sidenav.component.css',
 })
 export class SidenavComponent implements OnInit {
-  // UI Personalization properties
-  brandName = '';
-  logoPreview = '';
-  primaryColor = '#3f51b5';
   currentBrandName = '';
   currentLogo = '';
   currentPrimaryColor = '#3f51b5';
-  fillWithPreviousSettings = false;
-
-  showSavedSettingsModal = false;
-  savedSettingsList: Array<{ brandName: string; logo: string; primaryColor: string }> = [];
 
   @ViewChild('settingsSidenav') settingsSidenav!: MatSidenav;
-  @ViewChild('logoInput') logoInput!: ElementRef;
 
-  constructor(private snackBar: MatSnackBar) {
-    this.loadPersonalizationSettings();
-  }
+  constructor(private appSettingsService: AppSettingsService) {}
 
   ngOnInit() {
-    this.loadSavedSettingsList();
+    this.loadPersonalizationSettings();
+    this.appSettingsService.appliedSetting$.subscribe(setting => {
+      if (setting) {
+        this.currentBrandName = setting.name;
+        this.currentLogo = setting.logo;
+        this.currentPrimaryColor = setting.color;
+        this.applyDynamicTheme();
+      }
+    });
   }
 
-  // UI Personalization Methods
   toggleSettingsSidenav() {
     this.settingsSidenav.toggle();
   }
 
-  onLogoSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.logoPreview = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  // Save current settings to the list and update localStorage
-  saveSettings() {
-    const settings = {
-      brandName: this.brandName,
-      logo: this.logoPreview,
-      primaryColor: this.primaryColor,
-    };
-
-    // Save as current personalization
-    localStorage.setItem('uiPersonalizationSettings', JSON.stringify(settings));
-
-    // Save to saved settings list
-    let list = this.getSavedSettingsList();
-    list.push(settings);
-    localStorage.setItem('uiSavedSettingsList', JSON.stringify(list));
-    this.savedSettingsList = list;
-
-    // Apply settings immediately
-    this.currentBrandName = this.brandName;
-    this.currentLogo = this.logoPreview;
-    this.currentPrimaryColor = this.primaryColor;
-    this.applyDynamicTheme();
-    this.snackBar.open('Settings saved successfully!', 'Close', {
-      duration: 3000,
-      horizontalPosition: 'center',
-    });
-    this.settingsSidenav.close();
-  }
-
-  resetSettings() {
-    localStorage.removeItem('uiPersonalizationSettings');
-    // Reset to defaults
-    this.brandName = '';
-    this.logoPreview = '';
-    this.primaryColor = '#3f51b5';
-    this.currentBrandName = '';
-    this.currentLogo = '';
-    this.currentPrimaryColor = '#3f51b5';
-    this.fillWithPreviousSettings = false;
-    // Reset theme
-    this.applyDynamicTheme();
-    this.snackBar.open('Settings reset to default!', 'Close', {
-      duration: 3000,
-      horizontalPosition: 'center',
-    });
-    this.settingsSidenav.close();
-  }
-
-  // Load the saved settings list from localStorage
-  loadSavedSettingsList() {
-    this.savedSettingsList = this.getSavedSettingsList();
-  }
-
-  // Helper to get the saved settings list from localStorage
-  getSavedSettingsList() {
-    const list = localStorage.getItem('uiSavedSettingsList');
-    return list ? JSON.parse(list) : [];
-  }
-
-  // Delete a saved setting by index
-  deleteSavedSetting(index: number) {
-    this.savedSettingsList.splice(index, 1);
-    localStorage.setItem('uiSavedSettingsList', JSON.stringify(this.savedSettingsList));
-  }
-
-  // Apply a saved setting
-  applySavedSetting(index: number) {
-    const setting = this.savedSettingsList[index];
-    this.brandName = setting.brandName;
-    this.logoPreview = setting.logo;
-    this.primaryColor = setting.primaryColor;
-    this.currentBrandName = setting.brandName;
-    this.currentLogo = setting.logo;
-    this.currentPrimaryColor = setting.primaryColor;
-    this.applyDynamicTheme();
-    localStorage.setItem('uiPersonalizationSettings', JSON.stringify(setting));
-    this.snackBar.open('Applied saved setting!', 'Close', { duration: 2000 });
-    this.showSavedSettingsModal = false;
-  }
-
   loadPersonalizationSettings() {
-    const savedSettings = localStorage.getItem('uiPersonalizationSettings');
-    if (savedSettings) {
-      const settings = JSON.parse(savedSettings);
-      this.currentBrandName = settings.brandName || '';
-      this.currentLogo = settings.logo || '';
-      this.currentPrimaryColor = settings.primaryColor || '#3f51b5';
-      this.applyDynamicTheme();
-    }
+    this.appSettingsService.getSettings();
   }
 
   applyDynamicTheme() {

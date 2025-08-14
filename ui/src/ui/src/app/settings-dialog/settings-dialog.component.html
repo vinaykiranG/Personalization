@@ -1,57 +1,30 @@
-<h2 mat-dialog-title>
-  App Settings
-  <button mat-icon-button mat-dialog-close style="float: right;">
-    <mat-icon>close</mat-icon>
-  </button>
-</h2>
-<div mat-dialog-content class="settings-container">
-  
-  <mat-divider style="margin: 1rem 0;"></mat-divider>
-  <div class="logo-section" style="text-align: center;">
-    <img
-      [src]="logoPreview"
-      alt="Logo"
-      style="max-height: 80px; margin-bottom: 1rem;"
-    /> <br>
-    <input type="file" #logoInput hidden (change)="onLogoSelected($event)" accept="image/*" />
-    <button mat-raised-button color="primary" (click)="logoInput.click()">Upload Logo</button>
-  </div>
-  <mat-divider style="margin: 1rem 0;"></mat-divider>
-  <mat-form-field appearance="fill" style="width: 90%;">
-    <mat-label>Brand Name</mat-label>
-    <input matInput [(ngModel)]="brandName" />
+<h1 mat-dialog-title>{{ title }}</h1>
+
+<div mat-dialog-content [formGroup]="form">
+  <mat-form-field appearance="fill">
+    <mat-label>Setting Name</mat-label>
+    <input matInput formControlName="name" required>
+    <mat-error *ngIf="form.get('name')?.hasError('required')">Name is required</mat-error>
+    <mat-error *ngIf="form.get('name')?.hasError('minlength')">Name must be at least 3 characters</mat-error>
   </mat-form-field>
-  <mat-form-field appearance="fill" style="width: 90%; margin-top: 1em;">
-    <mat-label>Description</mat-label>
-    <input matInput [(ngModel)]="description" />
+
+  <mat-form-field appearance="fill">
+    <mat-label>Logo URL</mat-label>
+    <input matInput formControlName="logo" required>
+    <mat-error *ngIf="form.get('logo')?.hasError('required')">Logo URL is required</mat-error>
   </mat-form-field>
-  <mat-divider style="margin: 1rem 0;"></mat-divider>
-  <div class="colorPickerSec">
-    <label for="colorPicker" style="font-weight: 500; display: block; margin-bottom: 8px;">
-      Choose Theme Color
-    </label>
-    <input
-      id="colorPicker"
-      type="color"
-      [(ngModel)]="primaryColor"
-      style="width: 120px; height: 40px; border: none; border-radius: 3em; background: none; cursor: pointer;"
-    />
-  </div>
-  <mat-divider style="margin: 1rem 0;"></mat-divider>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Primary Color</mat-label>
+    <input matInput type="color" formControlName="color">
+    <mat-hint align="end">{{ form.get('color')?.value }}</mat-hint>
+    <mat-error *ngIf="form.get('color')?.hasError('pattern')">Must be a valid hex color (e.g., #RRGGBB)</mat-error>
+  </mat-form-field>
 </div>
-<div *ngIf="savedSettingsList?.length > 0" style="margin-top: 2em;">
-  <h3>Saved Settings</h3>
-  <ul>
-    <li *ngFor="let setting of savedSettingsList">
-      <strong>{{ setting.brandName }}</strong> - {{ setting.primaryColor }} - {{ setting.description }}
-    </li>
-  </ul>
+
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="onSave()">
+    {{ isEditMode? 'Save Changes' : 'Create' }}
+  </button>
 </div>
-<mat-dialog-actions style="justify-content: center; gap: 1em;">
-  <button mat-raised-button color="primary" (click)="saveSettings()">
-    Save
-  </button>
-  <button mat-raised-button color="primary" (click)="resetSettings()">
-    Reset
-  </button>
-</mat-dialog-actions>
