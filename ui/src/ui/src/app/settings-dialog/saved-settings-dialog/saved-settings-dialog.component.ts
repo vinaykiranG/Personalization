@@ -81,7 +81,8 @@ export class SavedSettingsDialogComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result) => {
       if (result?.saved && result.setting) {
         this.savedSettingsList.push(result.setting);
-        this.dataSource.data = this.savedSettingsList;
+        this.dataSource.data = [...this.savedSettingsList];
+        this.applySavedSetting(result.setting);
       }
     });
   }
@@ -104,6 +105,7 @@ export class SavedSettingsDialogComponent implements OnInit {
         if (index > -1) {
           this.savedSettingsList[index] = result.setting;
           this.dataSource.data = [...this.savedSettingsList];
+          this.applySavedSetting(result.setting);
         }
       }
     });

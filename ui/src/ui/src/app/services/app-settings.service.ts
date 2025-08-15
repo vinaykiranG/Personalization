@@ -35,13 +35,8 @@ export class AppSettingsService {
 
   updateSettings(settings: AppSettings): Observable<any> {
     return this.http.put(`${this.apiBase}`, settings, this.getAuthHeaders()).pipe(
-      tap((updatedSettings: any) => {
-        const newSettings: AppSettings = {
-          brandName: updatedSettings.brandName,
-          logoUrl: updatedSettings.logoUrl,
-          primaryColor: updatedSettings.primaryColor,
-        };
-        this.settingsChanged$.next(newSettings);
+      tap(() => {
+        this.settingsChanged$.next(settings);
       })
     );
   }
