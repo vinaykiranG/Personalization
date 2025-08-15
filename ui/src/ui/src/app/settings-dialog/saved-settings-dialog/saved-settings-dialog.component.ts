@@ -12,6 +12,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SettingsDialogComponent } from '../settings-dialog.component';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-saved-settings-dialog',
@@ -27,7 +28,8 @@ import { SettingsDialogComponent } from '../settings-dialog.component';
     MatTableModule,
     MatFormFieldModule,
     MatInputModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatDividerModule
   ],
   templateUrl: './saved-settings-dialog.component.html',
   styleUrls: ['./saved-settings-dialog.component.css']

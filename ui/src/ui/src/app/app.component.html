@@ -315,7 +315,7 @@ limitations under the License.
           [segmentMode]="segmentModeToggle.value"
           [allowSelection]="variants !== undefined"
           [draggable]="reorderSegmentsToggle?.checked ?? false"
-          [currentSegmentId]="currentSegmentId || 0"
+          [currentSegmentId]="currentSegmentIdNumber"
           [segmentMarkers]="segmentMarkers"
           (seekToSegmentEvent)="seekToSegment($event)"
           (segmentSplitEvent)="splitSegment($event)"
