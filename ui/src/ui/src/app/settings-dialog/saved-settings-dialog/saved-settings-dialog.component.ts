@@ -39,6 +39,7 @@ export class SavedSettingsDialogComponent implements OnInit {
   dataSource = new MatTableDataSource(this.savedSettingsList);
   loading = false;
   displayedColumns: string[] = ['settings', 'actions'];
+  filterValue: string = '';
 
   constructor(
     private snackBar: MatSnackBar,
@@ -52,12 +53,20 @@ export class SavedSettingsDialogComponent implements OnInit {
     this.loadSavedSettingsList();
   }
 
+  private refreshDataSource() {
+    this.dataSource = new MatTableDataSource(this.savedSettingsList);
+    this.dataSource.filterPredicate = (data: AppSettings, filter: string) => {
+      return data.brandName.toLowerCase().includes(filter);
+    };
+    this.dataSource.filter = this.filterValue;
+  }
+
   loadSavedSettingsList() {
     this.loading = true;
     this.appSettingsService.getSavedSettings().subscribe({
       next: (list) => {
         this.savedSettingsList = list;
-        this.dataSource = new MatTableDataSource(this.savedSettingsList);
+        this.refreshDataSource();
         this.loading = false;
       },
       error: () => {
@@ -68,8 +77,8 @@ export class SavedSettingsDialogComponent implements OnInit {
   }
 
   applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
+    this.filterValue = (event.target as HTMLInputElement).value.trim().toLowerCase();
+    this.dataSource.filter = this.filterValue;
   }
 
   createNewSetting() {
@@ -81,7 +90,7 @@ export class SavedSettingsDialogComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result) => {
       if (result?.saved && result.setting) {
         this.savedSettingsList.push(result.setting);
-        this.dataSource = new MatTableDataSource(this.savedSettingsList);
+        this.refreshDataSource();
         this.applySavedSetting(result.setting);
       }
     });
@@ -104,7 +113,7 @@ export class SavedSettingsDialogComponent implements OnInit {
         );
         if (index > -1) {
           this.savedSettingsList[index] = result.setting;
-          this.dataSource = new MatTableDataSource(this.savedSettingsList);
+          this.refreshDataSource();
           this.applySavedSetting(result.setting);
         }
       }
@@ -117,7 +126,7 @@ export class SavedSettingsDialogComponent implements OnInit {
         next: () => {
           this.snackBar.open('Deleted saved setting!', 'Close', { duration: 2000 });
           this.savedSettingsList = this.savedSettingsList.filter(s => s.id !== settingId);
-          this.dataSource = new MatTableDataSource(this.savedSettingsList);
+          this.refreshDataSource();
         },
         error: () => {
           this.snackBar.open('Failed to delete setting', 'Close', { duration: 2000 });
