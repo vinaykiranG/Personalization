@@ -158,10 +158,11 @@ export class AppComponent implements OnInit {
   openSettingsDialog() {
     const dialogRef = this.dialog.open(SavedSettingsDialogComponent, {
       width: '800px',
-      maxHeight: '90vh'
+      maxHeight: '90vh',
     });
+
     dialogRef.afterClosed().subscribe(result => {
-      if (result?.applied && result.settings) {
+      if (result?.applied) {
         this.applySettings(result.settings);
       }
     });
@@ -274,7 +275,7 @@ export class AppComponent implements OnInit {
 
   applySettings(settings: AppSettings) {
     if (settings.primaryColor) {
-      document.documentElement.style.setProperty('--theme-color', settings.primaryColor);
+      document.documentElement.style.setProperty('--primary-color', settings.primaryColor);
       this.primaryColor = settings.primaryColor;
     }
     this.logoUrl = settings.logoUrl || 'https://services.google.com/fh/files/misc/vigenair_logo.png';

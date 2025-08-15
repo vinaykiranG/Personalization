@@ -41,8 +41,6 @@ def get_saved_settings(current_user_id: str = Depends(get_user_id)):
 @router.post("/settings/saved", response_model=SavedAppSettings)
 def save_setting(payload: SaveSettingsPayload, current_user_id: str = Depends(get_user_id)):
     data = payload.model_dump()
-    if 'description' not in data:
-        data['description'] = None
     setting_id = firestore_service.save_setting(current_user_id, data)
     response_data = data.copy()
     response_data['id'] = setting_id

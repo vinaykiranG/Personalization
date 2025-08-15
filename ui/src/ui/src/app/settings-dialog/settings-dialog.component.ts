@@ -25,13 +25,12 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   styleUrls: ['./settings-dialog.component.css']
 })
 export class SettingsDialogComponent implements OnInit {
-  settings: AppSettings = { brandName: '', logoUrl: '', primaryColor: '', description: '' };
+  settings: AppSettings = { brandName: '', logoUrl: '', primaryColor: '' };
   loading = false;
   error = '';
   logoPreview: string = '';
   brandName: string = '';
   primaryColor: string = '#1976d2';
-  description: string = '';
 
   editMode = false;
   settingId: string = '';
@@ -92,12 +91,10 @@ export class SettingsDialogComponent implements OnInit {
     this.brandName = data.brandName;
     this.primaryColor = data.primaryColor;
     this.logoPreview = data.logoUrl;
-    this.description = data.description || '';
     this.settings = {
       brandName: data.brandName,
       logoUrl: data.logoUrl,
-      primaryColor: data.primaryColor,
-      description: data.description || ''
+      primaryColor: data.primaryColor
     };
   }
 
@@ -125,8 +122,7 @@ export class SettingsDialogComponent implements OnInit {
     const settingsToSave: AppSettings = {
       brandName: this.brandName,
       primaryColor: this.primaryColor,
-      logoUrl: this.logoPreview,
-      description: this.description
+      logoUrl: this.logoPreview
     };
 
     const operation = this.editMode

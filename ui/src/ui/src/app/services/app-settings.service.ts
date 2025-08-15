@@ -7,7 +7,6 @@ export interface AppSettings {
   brandName: string;
   logoUrl: string;
   primaryColor: string;
-  description?: string;
   logoFile?: File;
 }
 
@@ -47,8 +46,8 @@ export class AppSettingsService {
     );
   }
 
-  getSavedSettings(): Observable<(AppSettings & { id: string; description?: string })[]> {
-    return this.http.get<(AppSettings & { id: string; description?: string })[]>(
+  getSavedSettings(): Observable<(AppSettings & { id: string; })[]> {
+    return this.http.get<(AppSettings & { id: string; })[]>(
       `${this.apiBase}/saved`,
       this.getAuthHeaders()
     );

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AppSettingsService } from '../../services/app-settings.service';
+import { AppSettingsService, AppSettings } from '../../services/app-settings.service';
 import { Component, Inject, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -30,12 +30,13 @@ import { SettingsDialogComponent } from '../settings-dialog.component';
     MatProgressSpinnerModule
   ],
   templateUrl: './saved-settings-dialog.component.html',
-  // styleUrls removed to fix missing file error
+  styleUrls: ['./saved-settings-dialog.component.css']
 })
 export class SavedSettingsDialogComponent implements OnInit {
-  savedSettingsList: Array<{ id: string; brandName: string; logoUrl: string; primaryColor: string, description?: string }> = [];
+  savedSettingsList: (AppSettings & { id: string })[] = [];
   dataSource = new MatTableDataSource(this.savedSettingsList);
   loading = false;
+  displayedColumns: string[] = ['settings', 'actions'];
 
   constructor(
     private snackBar: MatSnackBar,
@@ -52,7 +53,7 @@ export class SavedSettingsDialogComponent implements OnInit {
   loadSavedSettingsList() {
     this.loading = true;
     this.appSettingsService.getSavedSettings().subscribe({
-      next: (list: any[]) => {
+      next: (list) => {
         this.savedSettingsList = list;
         this.dataSource.data = this.savedSettingsList;
         this.loading = false;
@@ -82,8 +83,7 @@ export class SavedSettingsDialogComponent implements OnInit {
     });
   }
 
-  editSetting(index: number) {
-    const setting = this.savedSettingsList[index];
+  editSetting(setting: AppSettings & { id: string }) {
     const dialogRef = this.dialog.open(SettingsDialogComponent, {
       width: '500px',
       data: {
@@ -100,8 +100,7 @@ export class SavedSettingsDialogComponent implements OnInit {
     });
   }
 
-  deleteSavedSetting(index: number) {
-    const settingId = this.savedSettingsList[index].id;
+  deleteSavedSetting(settingId: string) {
     if (confirm('Do you want to delete this setting?')) {
       this.appSettingsService.deleteSavedSetting(settingId).subscribe({
         next: () => {
@@ -115,11 +114,20 @@ export class SavedSettingsDialogComponent implements OnInit {
     }
   }
 
-  applySavedSetting(index: number) {
-    const setting = this.savedSettingsList[index];
-    this.appSettingsService.settingsChanged$.next(setting);
-    this.snackBar.open('Applied saved setting!', 'Close', { duration: 2000 });
-    this.dialogRef.close({ applied: true, settings: setting });
+  applySavedSetting(setting: AppSettings) {
+    this.appSettingsService.updateSettings(setting).subscribe({
+      next: () => {
+        this.snackBar.open('Applied saved setting!', 'Close', {
+          duration: 2000,
+        });
+        this.dialogRef.close({ applied: true, settings: setting });
+      },
+      error: () => {
+        this.snackBar.open('Failed to apply setting', 'Close', {
+          duration: 2000,
+        });
+      },
+    });
   }
 
   closeDialog() {
