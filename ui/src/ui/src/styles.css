@@ -16,6 +16,10 @@ limitations under the License.
 
 /* You can add global styles to this file, and also import other style files */
 
+:root {
+    --theme-color: #1976d2;
+}
+
 html,
 body {
   height: 100%;
@@ -23,4 +27,12 @@ body {
 body {
   margin: 0;
   font-family: 'Google Sans', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+.mat-mdc-raised-button.mat-primary {
+    background-color: var(--theme-color) !important;
+}
+
+.mat-mdc-icon-button.mat-primary {
+    color: var(--theme-color) !important;
 }

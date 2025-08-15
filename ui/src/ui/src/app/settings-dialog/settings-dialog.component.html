@@ -39,14 +39,6 @@
   </div>
   <mat-divider style="margin: 1rem 0;"></mat-divider>
 </div>
-<div *ngIf="savedSettingsList?.length > 0" style="margin-top: 2em;">
-  <h3>Saved Settings</h3>
-  <ul>
-    <li *ngFor="let setting of savedSettingsList">
-      <strong>{{ setting.brandName }}</strong> - {{ setting.primaryColor }} - {{ setting.description }}
-    </li>
-  </ul>
-</div>
 <mat-dialog-actions style="justify-content: center; gap: 1em;">
   <button mat-raised-button color="primary" (click)="saveSettings()">
     Save

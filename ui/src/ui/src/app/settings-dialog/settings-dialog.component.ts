@@ -1,7 +1,6 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { AppSettingsService, AppSettings } from '../services/app-settings.service';
-import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { SavedSettingsDialogComponent } from './saved-settings-dialog/saved-settings-dialog.component';
+import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -26,7 +25,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   styleUrls: ['./settings-dialog.component.css']
 })
 export class SettingsDialogComponent implements OnInit {
-  savedSettingsList: any[] = [];
   settings: AppSettings = { brandName: '', logoUrl: '', primaryColor: '', description: '' };
   loading = false;
   error = '';
@@ -35,18 +33,17 @@ export class SettingsDialogComponent implements OnInit {
   primaryColor: string = '#1976d2';
   description: string = '';
 
-  // Edit mode properties
   editMode = false;
   settingId: string = '';
 
+  selectedLogoFile: File | null = null;
+
   constructor(
-    private appSettingsService: AppSettingsService, 
-    private dialog: MatDialog,
+    private appSettingsService: AppSettingsService,
     private snackBar: MatSnackBar,
     public dialogRef: MatDialogRef<SettingsDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: any // ADD this
+    @Inject(MAT_DIALOG_DATA) public data: any
   ) {
-    // ADD this edit mode check
     if (this.data?.editMode) {
       this.editMode = true;
       this.settingId = this.data.settingId;
@@ -57,12 +54,9 @@ export class SettingsDialogComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.loadSettings();
-    this.appSettingsService.getSavedSettings().subscribe({
-      next: (settings) => {
-        this.savedSettingsList = settings;
-      }
-    });
+    if (!this.editMode) {
+      this.loadSettings();
+    }
   }
 
   loadSettings() {
@@ -81,8 +75,6 @@ export class SettingsDialogComponent implements OnInit {
       }
     });
   }
-
-  selectedLogoFile: File | null = null;
 
   onLogoSelected(event: any) {
     const file = event.target.files[0];
@@ -109,72 +101,56 @@ export class SettingsDialogComponent implements OnInit {
     };
   }
 
-  updateSavedSetting(settings: AppSettings) {
-    // For edit mode, we need to update the specific saved setting
-    this.appSettingsService.updateSavedSetting(this.settingId, settings).subscribe({
-      next: () => {
-        this.loading = false;
-        this.snackBar.open('Setting updated successfully!', 'Close', { duration: 2000 });
-        this.dialogRef.close({ updated: true });
-      },
-      error: (error) => {
-        console.error('Failed to update setting:', error);
-        this.error = 'Failed to update setting';
-        this.loading = false;
-      }
-    });
-  }
-
   saveSettings() {
     this.loading = true;
     this.error = '';
-    
-    const settingsToSave: AppSettings = {
-      brandName: this.brandName,
-      primaryColor: this.primaryColor,
-      logoUrl: this.settings.logoUrl,
-      logoFile: this.selectedLogoFile ?? undefined,
-      description: this.description
-    };
 
-    if (this.editMode) {
-      // Update existing saved setting
-      this.updateSavedSetting(settingsToSave);
-    } else {
-      // Save new setting with description
-      this.appSettingsService.saveSetting(settingsToSave).subscribe({
-        next: () => {
-          this.loading = false;
-          this.selectedLogoFile = null;
-          this.snackBar.open('Settings saved successfully!', 'Close', { duration: 2000 });
-          this.dialogRef.close({ created: true });
+    if (this.selectedLogoFile) {
+      this.appSettingsService.uploadLogo(this.selectedLogoFile).subscribe({
+        next: (response) => {
+          this.settings.logoUrl = response.logoUrl;
+          this.proceedToSaveSettings();
         },
         error: (error) => {
-          console.error('Failed to save settings:', error);
-          this.error = 'Failed to save settings';
+          this.error = 'Failed to upload logo';
           this.loading = false;
-        },
+        }
       });
+    } else {
+      this.proceedToSaveSettings();
     }
   }
 
-  openSavedSettingsDialog() {
-    const dialogRef = this.dialog.open(SavedSettingsDialogComponent, {
-      width: '500px',
-      data: { currentSettings: this.settings }
-    });
+  proceedToSaveSettings() {
+    const settingsToSave: AppSettings = {
+      brandName: this.brandName,
+      primaryColor: this.primaryColor,
+      logoUrl: this.logoPreview,
+      description: this.description
+    };
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result?.applied) {
-        this.appSettingsService.settingsChanged$.next(result.settings);
-        this.loadSettings();
+    const operation = this.editMode
+      ? this.appSettingsService.updateSavedSetting(this.settingId, settingsToSave)
+      : this.appSettingsService.saveSetting(settingsToSave);
+
+    operation.subscribe({
+      next: () => {
+        this.loading = false;
+        this.snackBar.open('Settings saved successfully!', 'Close', { duration: 2000 });
+        this.dialogRef.close({ saved: true });
+      },
+      error: (error) => {
+        this.error = 'Failed to save settings';
+        this.loading = false;
       }
     });
   }
 
   resetSettings() {
-    this.loadSettings();
+    if (this.editMode && this.data.prefilledData) {
+      this.prefillData(this.data.prefilledData);
+    } else {
+      this.loadSettings();
+    }
   }
-
-  // getUserId() removed, static userId is used in service
 }
