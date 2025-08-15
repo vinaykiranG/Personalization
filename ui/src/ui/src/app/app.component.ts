@@ -124,6 +124,8 @@ export type FramingDialogData = {
   styleUrl: './app.component.css',
 })
 export class AppComponent implements OnInit {
+  private styleTag!: HTMLStyleElement;
+
   frameInterval?: number;
   folderGcsPath: string = '';
   // UI personalization properties
@@ -247,6 +249,7 @@ export class AppComponent implements OnInit {
     private dialog: MatDialog,
     private appSettingsService: AppSettingsService
   ) {
+    this.styleTag = this.getOrCreateStyleElement('dynamic-theme-styles');
     this.getPreviousRuns();
     this.getWebAppUrl();
 
@@ -275,13 +278,37 @@ export class AppComponent implements OnInit {
 
   applySettings(settings: AppSettings) {
     if (settings.primaryColor) {
-      document.documentElement.style.setProperty('--primary-color', settings.primaryColor);
-      const contrastColor = this.getContrastColor(settings.primaryColor);
-      document.documentElement.style.setProperty('--primary-contrast-color', contrastColor);
+      const primary = settings.primaryColor;
+      const contrast = this.getContrastColor(primary);
+
+      // Create the CSS rules string
+      const themeCss = `
+        .mat-toolbar[color="primary"] {
+          background: ${primary};
+          color: ${contrast};
+        }
+        .mat-raised-button[color="primary"] {
+          background-color: ${primary};
+          color: ${contrast};
+        }
+      `;
+
+      // Update the style tag content
+      this.styleTag.textContent = themeCss;
       this.primaryColor = settings.primaryColor;
     }
     this.logoUrl = settings.logoUrl || 'https://services.google.com/fh/files/misc/vigenair_logo.png';
     this.brandName = settings.brandName || 'ViGenAiR';
+  }
+
+  private getOrCreateStyleElement(id: string): HTMLStyleElement {
+    let styleTag = document.getElementById(id) as HTMLStyleElement;
+    if (!styleTag) {
+      styleTag = document.createElement('style');
+      styleTag.id = id;
+      document.head.appendChild(styleTag);
+    }
+    return styleTag;
   }
 
   getContrastColor(hex: string): string {
