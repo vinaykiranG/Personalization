@@ -30,7 +30,7 @@ import { SettingsDialogComponent } from '../settings-dialog.component';
     MatProgressSpinnerModule
   ],
   templateUrl: './saved-settings-dialog.component.html',
-  styleUrls: ['./saved-settings-dialog.component.css']
+  // styleUrls removed to fix missing file error
 })
 export class SavedSettingsDialogComponent implements OnInit {
   savedSettingsList: Array<{ id: string; brandName: string; logoUrl: string; primaryColor: string, description?: string }> = [];

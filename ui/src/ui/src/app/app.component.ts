@@ -124,6 +124,8 @@ export type FramingDialogData = {
   styleUrl: './app.component.css',
 })
 export class AppComponent implements OnInit {
+  frameInterval?: number;
+  folderGcsPath: string = '';
   // UI personalization properties
   logoUrl: string = '';
   brandName: string = '';
@@ -165,15 +167,22 @@ export class AppComponent implements OnInit {
     });
   }
 
-  applySettings(settings: any) {
-    this.logoUrl = settings.logoUrl;
-    this.brandName = settings.brandName;
-    this.primaryColor = settings.primaryColor;
-    // Optionally trigger change detection or update theme
-  }
-  }
+  // Additional properties to fix missing property errors
+  folder: string = '';
+  combosFolder: string = '';
+  encodedUserId?: string;
+  canvas?: CanvasRenderingContext2D;
+    currentSegmentId?: string | number;
   // ...existing code continues...
   prompt = '';
+  // For template usage: Math and JSON
+  math = Math;
+  json = JSON;
+
+  // Getter for template to ensure number type
+  get currentSegmentIdNumber(): number {
+    return typeof this.currentSegmentId === 'string' ? Number(this.currentSegmentId) || 0 : this.currentSegmentId || 0;
+  }
   selectedAbcdType: AbcdType = 'awareness';
   evalPrompt = CONFIG.vertexAi.abcdBusinessObjectives.awareness.promptPart;
   duration = 0;
@@ -183,14 +192,8 @@ export class AppComponent implements OnInit {
   fadeOut = false;
   demandGenAssets = true;
   analyseAudio = true;
-  previousRuns: string[] | undefined;
-  previousRenders: PreviousRender[] | undefined;
-  encodedUserId: string | undefined;
-  folder = '';
-  folderGcsPath = '';
-  combosFolder = '';
-  math = Math;
-  json = JSON;
+  previousRuns?: string[];
+  previousRenders?: PreviousRender[];
   stars: number[] = new Array(5).fill(0);
   renderQueue: RenderQueueVariant[] = [];
   renderQueueJsonArray: string[] = [];
@@ -208,9 +211,7 @@ export class AppComponent implements OnInit {
   videoWidth = CONFIG.defaultVideoWidth;
   videoHeight = CONFIG.defaultVideoHeight;
   maxSquareWidth = CONFIG.defaultVideoHeight;
-  maxVerticalWidth =
-    CONFIG.defaultVideoHeight *
-    (CONFIG.defaultVideoHeight / CONFIG.defaultVideoWidth);
+  maxVerticalWidth = CONFIG.defaultVideoHeight * (CONFIG.defaultVideoHeight / CONFIG.defaultVideoWidth);
   maxNonLandscapeHeight = CONFIG.defaultVideoHeight;
   maxRetries = CONFIG.maxRetries;
   showApprovalStatus = false;
