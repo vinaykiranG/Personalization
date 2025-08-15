@@ -57,7 +57,7 @@ export class SavedSettingsDialogComponent implements OnInit {
     this.appSettingsService.getSavedSettings().subscribe({
       next: (list) => {
         this.savedSettingsList = list;
-        this.dataSource.data = this.savedSettingsList;
+        this.dataSource = new MatTableDataSource(this.savedSettingsList);
         this.loading = false;
       },
       error: () => {
@@ -81,7 +81,7 @@ export class SavedSettingsDialogComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result) => {
       if (result?.saved && result.setting) {
         this.savedSettingsList.push(result.setting);
-        this.dataSource.data = [...this.savedSettingsList];
+        this.dataSource = new MatTableDataSource(this.savedSettingsList);
         this.applySavedSetting(result.setting);
       }
     });
@@ -104,7 +104,7 @@ export class SavedSettingsDialogComponent implements OnInit {
         );
         if (index > -1) {
           this.savedSettingsList[index] = result.setting;
-          this.dataSource.data = [...this.savedSettingsList];
+          this.dataSource = new MatTableDataSource(this.savedSettingsList);
           this.applySavedSetting(result.setting);
         }
       }
@@ -116,7 +116,8 @@ export class SavedSettingsDialogComponent implements OnInit {
       this.appSettingsService.deleteSavedSetting(settingId).subscribe({
         next: () => {
           this.snackBar.open('Deleted saved setting!', 'Close', { duration: 2000 });
-          this.loadSavedSettingsList();
+          this.savedSettingsList = this.savedSettingsList.filter(s => s.id !== settingId);
+          this.dataSource = new MatTableDataSource(this.savedSettingsList);
         },
         error: () => {
           this.snackBar.open('Failed to delete setting', 'Close', { duration: 2000 });
