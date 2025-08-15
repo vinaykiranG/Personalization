@@ -36,7 +36,12 @@
   <mat-divider style="margin: 1rem 0;"></mat-divider>
 </div>
 <mat-dialog-actions style="justify-content: center; gap: 1em;">
-  <button mat-raised-button color="primary" (click)="saveSettings()">
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="saveSettings()"
+    [disabled]="!brandName || !primaryColor || !logoPreview"
+  >
     Save
   </button>
   <button mat-raised-button color="primary" (click)="resetSettings()">

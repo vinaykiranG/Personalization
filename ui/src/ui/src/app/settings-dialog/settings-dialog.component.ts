@@ -28,9 +28,9 @@ export class SettingsDialogComponent implements OnInit {
   settings: AppSettings = { brandName: '', logoUrl: '', primaryColor: '' };
   loading = false;
   error = '';
-  logoPreview: string = '';
+  logoPreview: string | null = null;
   brandName: string = '';
-  primaryColor: string = '#1976d2';
+  primaryColor: string = '';
 
   editMode = false;
   settingId: string = '';
@@ -53,9 +53,7 @@ export class SettingsDialogComponent implements OnInit {
   }
 
   ngOnInit() {
-    if (!this.editMode) {
-      this.loadSettings();
-    }
+    // No-op. Logic is handled in constructor or on user interaction.
   }
 
   loadSettings() {
