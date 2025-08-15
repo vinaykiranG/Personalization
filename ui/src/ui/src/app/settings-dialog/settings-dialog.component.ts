@@ -130,10 +130,10 @@ export class SettingsDialogComponent implements OnInit {
       : this.appSettingsService.saveSetting(settingsToSave);
 
     operation.subscribe({
-      next: () => {
+      next: (savedSetting) => {
         this.loading = false;
         this.snackBar.open('Settings saved successfully!', 'Close', { duration: 2000 });
-        this.dialogRef.close({ saved: true });
+        this.dialogRef.close({ saved: true, setting: savedSetting });
       },
       error: (error) => {
         this.error = 'Failed to save settings';

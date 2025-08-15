@@ -75,12 +75,13 @@ export class SavedSettingsDialogComponent implements OnInit {
   createNewSetting() {
     const dialogRef = this.dialog.open(SettingsDialogComponent, {
       width: '500px',
-      data: { editMode: false }
+      data: { editMode: false },
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result?.saved) {
-        this.loadSavedSettingsList();
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result?.saved && result.setting) {
+        this.savedSettingsList.push(result.setting);
+        this.dataSource.data = this.savedSettingsList;
       }
     });
   }
@@ -91,13 +92,19 @@ export class SavedSettingsDialogComponent implements OnInit {
       data: {
         editMode: true,
         settingId: setting.id,
-        prefilledData: setting
-      }
+        prefilledData: setting,
+      },
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result?.saved) {
-        this.loadSavedSettingsList();
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result?.saved && result.setting) {
+        const index = this.savedSettingsList.findIndex(
+          (s) => s.id === result.setting.id
+        );
+        if (index > -1) {
+          this.savedSettingsList[index] = result.setting;
+          this.dataSource.data = [...this.savedSettingsList];
+        }
       }
     });
   }
