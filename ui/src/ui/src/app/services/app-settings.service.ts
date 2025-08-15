@@ -41,8 +41,8 @@ export class AppSettingsService {
     );
   }
 
-  getSavedSettings(): Observable<(AppSettings & { id: string; })[]> {
-    return this.http.get<(AppSettings & { id: string; })[]>(
+  getSavedSettings(): Observable<(AppSettings & { id: string })[]> {
+    return this.http.get<(AppSettings & { id: string })[]>(
       `${this.apiBase}/saved`,
       this.getAuthHeaders()
     );

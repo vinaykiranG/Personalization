@@ -144,4 +144,8 @@ export class SavedSettingsDialogComponent implements OnInit {
   closeDialog() {
     this.dialogRef.close();
   }
+
+  trackBySettingId(index: number, item: AppSettings & { id: string }): string {
+    return item.id;
+  }
 }
