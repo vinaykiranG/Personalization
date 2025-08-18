@@ -159,8 +159,9 @@ export class AppComponent implements OnInit {
   // ...existing code...
   openSettingsDialog() {
     const dialogRef = this.dialog.open(SavedSettingsDialogComponent, {
-      width: '800px',
+      width: '700px',
       maxHeight: '90vh',
+      panelClass: 'custom-dialog'
     });
 
     dialogRef.afterClosed().subscribe(result => {
@@ -274,31 +275,53 @@ export class AppComponent implements OnInit {
     this.appSettingsService.settingsChanged$.subscribe(settings => {
       this.applySettings(settings);
     });
+
+    // Re-apply theme class from localStorage (if present)
+    const primary = localStorage.getItem('primary-color');
+    if (primary) {
+      document.body.classList.forEach(cls => {
+        if (cls.startsWith('primary-theme-')) document.body.classList.remove(cls);
+      });
+      document.body.classList.add(`primary-theme-${primary.replace('#', '')}`);
+    }
   }
 
   applySettings(settings: AppSettings) {
     if (settings.primaryColor) {
       const primary = settings.primaryColor;
       const contrast = this.getContrastColor(primary);
+      const hover = this.getHoverColor(primary);
 
-      // Create the CSS rules string
-      const themeCss = `
-        .mat-toolbar[color="primary"] {
-          background: ${primary};
-          color: ${contrast};
-        }
-        .mat-raised-button[color="primary"] {
-          background-color: ${primary};
-          color: ${contrast};
-        }
-      `;
+      document.documentElement.style.setProperty('--primary-color', primary);
+      document.documentElement.style.setProperty('--primary-contrast-color', contrast);
+      document.documentElement.style.setProperty('--primary-hover-color', hover);
 
-      // Update the style tag content
-      this.styleTag.textContent = themeCss;
-      this.primaryColor = settings.primaryColor;
+      localStorage.setItem('primary-color', primary);
+      localStorage.setItem('primary-contrast-color', contrast);
+      localStorage.setItem('primary-hover-color', hover);
+
+      this.primaryColor = primary;
+
+      // Remove any previous theme class
+      document.body.classList.forEach(cls => {
+        if (cls.startsWith('primary-theme-')) document.body.classList.remove(cls);
+      });
+      // Add new theme class based on color hex (e.g., #1976d2 => primary-theme-1976d2)
+      document.body.classList.add(`primary-theme-${primary.replace('#', '')}`);
     }
     this.logoUrl = settings.logoUrl || 'https://services.google.com/fh/files/misc/vigenair_logo.png';
     this.brandName = settings.brandName || 'ViGenAiR';
+  }
+
+  // Helper to get a slightly darker hover color
+  private getHoverColor(hex: string): string {
+    let c = hex.startsWith('#') ? hex.substring(1) : hex;
+    let rgb = [
+      parseInt(c.substring(0,2),16),
+      parseInt(c.substring(2,4),16),
+      parseInt(c.substring(4,6),16)
+    ].map(v => Math.max(0, Math.floor(v * 0.9)));
+    return `#${rgb.map(v => v.toString(16).padStart(2,'0')).join('')}`;
   }
 
   private getOrCreateStyleElement(id: string): HTMLStyleElement {

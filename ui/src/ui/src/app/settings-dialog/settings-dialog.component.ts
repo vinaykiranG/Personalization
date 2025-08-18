@@ -50,6 +50,11 @@ export class SettingsDialogComponent implements OnInit {
         this.prefillData(this.data.prefilledData);
       }
     }
+    // Set initial color from theme service
+    const currentColor = localStorage.getItem('themeColor');
+    if (currentColor) {
+      this.primaryColor = currentColor;
+    }
   }
 
   ngOnInit() {
@@ -120,7 +125,7 @@ export class SettingsDialogComponent implements OnInit {
     const settingsToSave: AppSettings = {
       brandName: this.brandName,
       primaryColor: this.primaryColor,
-      logoUrl: this.logoPreview
+      logoUrl: this.logoPreview || ''
     };
 
     const operation = this.editMode
@@ -132,6 +137,10 @@ export class SettingsDialogComponent implements OnInit {
         this.loading = false;
         this.snackBar.open('Settings saved successfully!', 'Close', { duration: 2000 });
         this.dialogRef.close({ saved: true, setting: savedSetting });
+        // Store theme color in localStorage for persistence
+        if (settingsToSave.primaryColor) {
+          localStorage.setItem('primary-color', settingsToSave.primaryColor);
+        }
       },
       error: (error) => {
         this.error = 'Failed to save settings';

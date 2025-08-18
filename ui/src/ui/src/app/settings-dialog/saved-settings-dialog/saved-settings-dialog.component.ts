@@ -13,6 +13,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SettingsDialogComponent } from '../settings-dialog.component';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { ViewChild, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-saved-settings-dialog',
@@ -30,11 +32,13 @@ import { MatDividerModule } from '@angular/material/divider';
     MatInputModule,
     MatProgressSpinnerModule,
     MatDividerModule
+    , MatPaginatorModule
   ],
   templateUrl: './saved-settings-dialog.component.html',
   styleUrls: ['./saved-settings-dialog.component.css']
 })
 export class SavedSettingsDialogComponent implements OnInit {
+  @ViewChild(MatPaginator, { static: true }) paginator!: MatPaginator;
   savedSettingsList: (AppSettings & { id: string })[] = [];
   dataSource = new MatTableDataSource(this.savedSettingsList);
   loading = false;
@@ -46,12 +50,17 @@ export class SavedSettingsDialogComponent implements OnInit {
     public dialogRef: MatDialogRef<SavedSettingsDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { currentSettings: any },
     private appSettingsService: AppSettingsService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit() {
     this.loadSavedSettingsList();
   }
+
+    ngAfterViewInit() {
+      // No need to set paginator here, handled in refreshDataSource
+    }
 
   private refreshDataSource() {
     this.dataSource = new MatTableDataSource(this.savedSettingsList);
@@ -59,6 +68,8 @@ export class SavedSettingsDialogComponent implements OnInit {
       return data.brandName.toLowerCase().includes(filter);
     };
     this.dataSource.filter = this.filterValue;
+    this.dataSource.paginator = this.paginator;
+    this.cdr.detectChanges();
   }
 
   loadSavedSettingsList() {
@@ -84,7 +95,8 @@ export class SavedSettingsDialogComponent implements OnInit {
   createNewSetting() {
     const dialogRef = this.dialog.open(SettingsDialogComponent, {
       width: '500px',
-      data: { editMode: false },
+      maxHeight: '90vh',
+      panelClass: 'custom-dialog'
     });
 
     dialogRef.afterClosed().subscribe((result) => {
@@ -99,6 +111,8 @@ export class SavedSettingsDialogComponent implements OnInit {
   editSetting(setting: AppSettings & { id: string }) {
     const dialogRef = this.dialog.open(SettingsDialogComponent, {
       width: '500px',
+      maxHeight: '90vh',
+      panelClass: 'custom-dialog',
       data: {
         editMode: true,
         settingId: setting.id,
@@ -142,6 +156,10 @@ export class SavedSettingsDialogComponent implements OnInit {
           duration: 2000,
         });
         this.dialogRef.close({ applied: true, settings: setting });
+        // Store theme color in localStorage for persistence
+        if (setting.primaryColor) {
+          localStorage.setItem('primary-color', setting.primaryColor);
+        }
       },
       error: () => {
         this.snackBar.open('Failed to apply setting', 'Close', {
@@ -158,4 +176,17 @@ export class SavedSettingsDialogComponent implements OnInit {
   trackBySettingId(index: number, item: AppSettings & { id: string }): string {
     return item.id;
   }
+    /**
+     * Resets settings to default values and applies them.
+     */
+    resetSettings() {
+      const defaultSetting: AppSettings = {
+        brandName: 'ViGenAir',
+        logoUrl: 'https://services.google.com/fh/files/misc/vigenair_logo.png',
+        primaryColor: '#3f51b5',
+        // Add other required properties with sensible defaults if needed
+      };
+      this.applySavedSetting(defaultSetting);
+      this.snackBar.open('Reset to default settings!', 'Close', { duration: 2000 });
+    }
 }
