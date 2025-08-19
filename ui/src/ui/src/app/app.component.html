@@ -33,7 +33,10 @@ limitations under the License.
     ></span
   >
   <span style="margin-left: auto"></span>
-  <span #settingsButtonSpan>
+  <span *ngIf="userEmail" style="font-size: 0.95em; color: #f8f7f7; margin-left: 4px;">
+      {{ userEmail }}
+    </span>
+  <span #settingsButtonSpan style="display: flex; align-items: center; gap: 8px;">
     <button
       mat-icon-button
       matTooltip="App Settings"
@@ -41,6 +44,7 @@ limitations under the License.
     >
       <mat-icon>settings</mat-icon>
     </button>
+    
   </span>
   <span #renderQueueButtonSpan>
     <button

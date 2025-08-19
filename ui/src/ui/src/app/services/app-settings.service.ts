@@ -13,15 +13,34 @@ export interface AppSettings {
 @Injectable({ providedIn: 'root' })
 export class AppSettingsService {
   private apiBase = '/api/settings';
-  private staticUserId = 'Google'; // Use as user ID, not brand name
   public settingsChanged$ = new Subject<AppSettings>();
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    // Initialize service
+  }
+
+  private getUserId(): string {
+    if (location.hostname === 'localhost') {
+      return 'testuser@example.com';
+    }
+    try {
+      // Get the raw email from the session
+      if ((window as any).Session?.getActiveUser) {
+        const email = (window as any).Session.getActiveUser().getEmail();
+        if (email) {
+          return email;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to get user email from Session', e);
+    }
+    return 'testuser@example.com';
+  }
 
   private getAuthHeaders() {
     return {
       headers: new HttpHeaders({
-        'X-User-Id': this.staticUserId,
+        'X-User-Id': this.getUserId(),
       }),
     };
   }

@@ -15,6 +15,7 @@ import { SettingsDialogComponent } from '../settings-dialog.component';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { ViewChild, AfterViewInit, ChangeDetectorRef } from '@angular/core';
+import { ConfirmationDialogComponent } from '../confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-saved-settings-dialog',
@@ -135,18 +136,28 @@ export class SavedSettingsDialogComponent implements OnInit {
   }
 
   deleteSavedSetting(settingId: string) {
-    if (confirm('Do you want to delete this setting?')) {
-      this.appSettingsService.deleteSavedSetting(settingId).subscribe({
-        next: () => {
-          this.snackBar.open('Deleted saved setting!', 'Close', { duration: 2000 });
-          this.savedSettingsList = this.savedSettingsList.filter(s => s.id !== settingId);
-          this.refreshDataSource();
-        },
-        error: () => {
-          this.snackBar.open('Failed to delete setting', 'Close', { duration: 2000 });
-        }
-      });
-    }
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Setting',
+        message: 'Are you sure you want to delete this setting?'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.appSettingsService.deleteSavedSetting(settingId).subscribe({
+          next: () => {
+            this.snackBar.open('Deleted saved setting!', 'Close', { duration: 2000 });
+            this.savedSettingsList = this.savedSettingsList.filter(s => s.id !== settingId);
+            this.refreshDataSource();
+          },
+          error: () => {
+            this.snackBar.open('Failed to delete setting', 'Close', { duration: 2000 });
+          }
+        });
+      }
+    });
   }
 
   applySavedSetting(setting: AppSettings) {

@@ -16,7 +16,11 @@ router = APIRouter()
 def get_user_id(request: Request):
     user_id = request.headers.get("X-User-Id")
     if not user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+        raise HTTPException(status_code=401, detail="Unauthorized: Missing user id")
+    # Basic email validation
+    if '@' not in user_id or '.' not in user_id:
+        raise HTTPException(status_code=400, detail="Invalid user ID format - must be a valid email address")
+    # No need to sanitize, we'll use the email as-is
     return user_id
 
 @router.get("/settings", response_model=AppSettings)
