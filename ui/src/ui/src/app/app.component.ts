@@ -131,7 +131,6 @@ export class AppComponent implements OnInit {
     if (location.hostname === 'localhost') {
       this.userEmail = 'testuser@example.com';
     } else {
-      // Get the raw email from the session
       const email = (window as any).Session?.getActiveUser()?.getEmail();
       this.userEmail = email || 'testuser@example.com';
     }
@@ -139,7 +138,6 @@ export class AppComponent implements OnInit {
 
   frameInterval?: number;
   folderGcsPath: string = '';
-  // UI personalization properties
   logoUrl: string = '';
   brandName: string = '';
   primaryColor: string = '#1976d2';
