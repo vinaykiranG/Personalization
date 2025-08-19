@@ -4,11 +4,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Ensure Firestore emulator is always used if FIRESTORE_EMULATOR_HOST is set
-FIRESTORE_EMULATOR_HOST = os.getenv('FIRESTORE_EMULATOR_HOST')
-if FIRESTORE_EMULATOR_HOST:
-    os.environ['FIRESTORE_EMULATOR_HOST'] = FIRESTORE_EMULATOR_HOST
-    print(f"[Firestore] Using emulator at {FIRESTORE_EMULATOR_HOST}")
 
 PROJECT_ID = os.getenv('PROJECT_ID')
 USERS_COLLECTION = 'users'
