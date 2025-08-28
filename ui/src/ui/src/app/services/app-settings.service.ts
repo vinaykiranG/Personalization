@@ -12,7 +12,7 @@ export interface AppSettings {
 
 @Injectable({ providedIn: 'root' })
 export class AppSettingsService {
-  private apiBase = 'https://us-central1-demos-dev-467317.cloudfunctions.net/vigenair-backend/api/settings';
+  private apiBase = '[YOUR_BACKEND_URL]';
   public settingsChanged$ = new Subject<AppSettings>();
 
   constructor(private http: HttpClient) {
@@ -47,13 +47,13 @@ export class AppSettingsService {
 
   getSettings(): Observable<AppSettings> {
     return this.http.get<AppSettings>(
-      `${this.apiBase}`,
+      `${this.apiBase}/api/settings`,
       this.getAuthHeaders()
     );
   }
 
   updateSettings(settings: AppSettings): Observable<any> {
-    return this.http.put(`${this.apiBase}`, settings, this.getAuthHeaders()).pipe(
+    return this.http.put(`${this.apiBase}/api/settings`, settings, this.getAuthHeaders()).pipe(
       tap(() => {
         this.settingsChanged$.next(settings);
       })
@@ -62,14 +62,14 @@ export class AppSettingsService {
 
   getSavedSettings(): Observable<(AppSettings & { id: string })[]> {
     return this.http.get<(AppSettings & { id: string })[]>(
-      `${this.apiBase}/saved`,
+      `${this.apiBase}/api/settings/saved`,
       this.getAuthHeaders()
     );
   }
 
   saveSetting(settings: AppSettings): Observable<any> {
     return this.http.post(
-      `${this.apiBase}/saved`,
+      `${this.apiBase}/api/settings/saved`,
       settings,
       this.getAuthHeaders()
     );
@@ -77,7 +77,7 @@ export class AppSettingsService {
 
   updateSavedSetting(settingId: string, settings: AppSettings): Observable<any> {
     return this.http.put(
-      `${this.apiBase}/saved/${settingId}`,
+      `${this.apiBase}/api/settings/saved/${settingId}`,
       settings,
       this.getAuthHeaders()
     );
@@ -85,14 +85,14 @@ export class AppSettingsService {
 
   deleteSavedSetting(settingId: string): Observable<any> {
     return this.http.delete(
-      `${this.apiBase}/saved/${settingId}`,
+      `${this.apiBase}/api/settings/saved/${settingId}`,
       this.getAuthHeaders()
     );
   }
 
   getSavedSetting(settingId: string): Observable<AppSettings & { id: string }> {
     return this.http.get<AppSettings & { id: string }>(
-      `${this.apiBase}/saved/${settingId}`,
+      `${this.apiBase}/api/settings/saved/${settingId}`,
       this.getAuthHeaders()
     );
   }
@@ -101,7 +101,7 @@ export class AppSettingsService {
     const formData = new FormData();
     formData.append('file', logoFile, logoFile.name);
     return this.http.post<{ logoUrl: string }>(
-      `${this.apiBase}/logo`,
+      `${this.apiBase}/api/settings/logo`,
       formData,
       this.getAuthHeaders()
     );

@@ -5,9 +5,13 @@ from backend.api import settings
 app = FastAPI()
 
 # CORS configuration
-# Allow all origins for development purposes
-# In a production environment, this should be restricted to the specific frontend URL
-origins = ["*"]
+# CORS configuration
+origins = [
+    "http://localhost:4200",
+    "https://us-central1-demos-dev-467317.cloudfunctions.net",
+    "https://script.google.com",
+    "https://n-k42wgrg5jok3zda5cwz6mm3ufq-script.googleusercontent.com",
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(settings.router, prefix="/api")
+app.include_router(settings.router)
 
 @app.get("/")
 def read_root():

@@ -11,9 +11,8 @@ This guide provides step-by-step instructions for deploying the frontend and bac
     ```
 3.  **Set your GCP Project ID:**
     ```bash
-    gcloud config set project [YOUR_PROJECT_ID]
+    gcloud config set project demos-dev-467317
     ```
-    Replace `[YOUR_PROJECT_ID]` with your Google Cloud project ID.
 4.  **Enable required APIs:**
     ```bash
     gcloud services enable run.googleapis.com
@@ -33,21 +32,29 @@ The backend is a FastAPI application that will be deployed to Google Cloud Run.
 
 2.  **Build the Docker image:**
     ```bash
-    gcloud builds submit --tag gcr.io/[YOUR_PROJECT_ID]/vigenair-backend
+    gcloud builds submit --tag gcr.io/demos-dev-467317/vigenair-backend
     ```
-    Replace `[YOUR_PROJECT_ID]` with your Google Cloud project ID. This command will build the Docker image using Cloud Build and push it to Google Container Registry.
 
 3.  **Deploy to Cloud Run:**
     ```bash
     gcloud run deploy vigenair-backend \
-      --image gcr.io/[YOUR_PROJECT_ID]/vigenair-backend \
+      --image gcr.io/demos-dev-467317/vigenair-backend \
       --platform managed \
       --region us-central1 \
-      --allow-unauthenticated
+      --allow-unauthenticated \
+      --set-env-vars PROJECT_ID=demos-dev-467317
     ```
-    Replace `[YOUR_PROJECT_ID]` with your Google Cloud project ID. This command deploys the service to Cloud Run in the `us-central1` region and allows public access. You will be prompted to confirm the deployment.
+    This command deploys the service to Cloud Run in the `us-central1` region and allows public access.
 
-    After the deployment is complete, you will get a service URL. It should be `https://vigenair-backend-....run.app`. The URL you provided (`https://us-central1-demos-dev-467317.cloudfunctions.net/vigenair-backend`) is for a Cloud Function, but we are deploying to Cloud Run. The code has been updated to use the URL you provided, but if you deploy to Cloud Run, the URL will be different. Please update the `apiBase` in `ui/src/ui/src/app/services/app-settings.service.ts` with the correct URL of your Cloud Run service.
+    **IMPORTANT:** After the deployment is complete, you will get a service URL from the `gcloud run deploy` command. It will look something like this: `https://vigenair-backend-....run.app`.
+
+    You must update the frontend code to use this URL before you deploy it.
+    1.  Open the file `ui/src/ui/src/app/services/app-settings.service.ts`.
+    2.  Find the line that starts with `private apiBase =`.
+    3.  Replace `[YOUR_BACKEND_URL]` with the URL of your deployed Cloud Run service.
+
+    For example, if your service URL is `https://my-backend-service-123-uc.a.run.app`, the line should be:
+    `private apiBase = 'https://my-backend-service-123-uc.a.run.app';`
 
 ## Frontend Deployment
 
@@ -75,7 +82,7 @@ The frontend is an Angular application hosted on Google Apps Script. The `README
 
 Once the `vigenair-backend` service is deployed, you can test the API endpoints using `curl`.
 
-Replace `[YOUR_BACKEND_URL]` with the URL of your deployed Cloud Run service (e.g., `https://us-central1-demos-dev-467317.cloudfunctions.net/vigenair-backend`). Replace `[YOUR_USER_ID]` with a test user ID (e.g., `testuser@example.com`).
+Replace `[YOUR_BACKEND_URL]` with the URL of your deployed Cloud Run service. Replace `[YOUR_USER_ID]` with a test user ID (e.g., `testuser@example.com`).
 
 ### Settings
 
@@ -120,5 +127,5 @@ Replace `[YOUR_BACKEND_URL]` with the URL of your deployed Cloud Run service (e.
 
 *   **Upload a logo (replace `[FILE_PATH]` with the path to a logo file, e.g., `~/logo.png`):**
     ```bash
-    curl -X POST -H "X-User-Id: [YOUR_USER_ID]" -F "file=@/[FILE_PATH]" [YOUR_BACKEND_URL]/api/settings/logo
+    curl -X POST -H "X-User-Id: [YOUR_USER_ID]" -F "file=@[FILE_PATH]" [YOUR_BACKEND_URL]/api/settings/logo
     ```
