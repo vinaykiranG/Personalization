@@ -41,8 +41,7 @@ The backend is a FastAPI application that will be deployed to Google Cloud Funct
       --allow-unauthenticated \
       --entry-point app \
       --source . \
-      --region us-central1 \
-      --set-env-vars PROJECT_ID=demos-dev-467317
+      --region us-central1
     ```
     This command deploys the service to a 2nd Gen Cloud Function in the `us-central1` region and allows public access. The entry point is the `app` object in `main.py`. The `functions-framework` library (added to `requirements.txt`) will automatically wrap the FastAPI application and serve it correctly.
 

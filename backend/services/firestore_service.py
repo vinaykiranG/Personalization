@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-PROJECT_ID = os.getenv('PROJECT_ID')
+PROJECT_ID = 'demos-dev-467317'
 DATABASE_ID = os.getenv('FIRESTORE_DATABASE_ID', 'vigenair-db')
 USERS_COLLECTION = 'users'
 APP_SETTINGS_SUBCOLLECTION = 'appSettings'
