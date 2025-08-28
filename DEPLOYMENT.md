@@ -1,5 +1,7 @@
 # Deployment Guide
 
+**IMPORTANT NOTE:** To avoid errors, please **copy and paste** the `gcloud` commands directly from this guide into your terminal. Do not re-type them.
+
 This guide provides step-by-step instructions for deploying the frontend and backend services.
 
 ## Prerequisites
@@ -42,7 +44,7 @@ The backend is a FastAPI application that will be deployed to Google Cloud Funct
       --region us-central1 \
       --set-env-vars PROJECT_ID=demos-dev-467317
     ```
-    This command deploys the service to a 2nd Gen Cloud Function in the `us-central1` region and allows public access. The entry point is the `app` object in `main.py`.
+    This command deploys the service to a 2nd Gen Cloud Function in the `us-central1` region and allows public access. The entry point is the `app` object in `main.py`. The `functions-framework` library (added to `requirements.txt`) will automatically wrap the FastAPI application and serve it correctly.
 
     After the deployment is complete, the service will be available at the URL that is configured in the frontend code: `https://us-central1-demos-dev-467317.cloudfunctions.net/vigenair-backend`.
 
