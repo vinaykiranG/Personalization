@@ -12,7 +12,7 @@ export interface AppSettings {
 
 @Injectable({ providedIn: 'root' })
 export class AppSettingsService {
-  private apiBase = '[YOUR_BACKEND_URL]';
+  private apiBase = '[YOUR_BACKEND_URL]/api/settings';
   public settingsChanged$ = new Subject<AppSettings>();
 
   constructor(private http: HttpClient) {
@@ -47,13 +47,13 @@ export class AppSettingsService {
 
   getSettings(): Observable<AppSettings> {
     return this.http.get<AppSettings>(
-      `${this.apiBase}/api/settings`,
+      `${this.apiBase}`,
       this.getAuthHeaders()
     );
   }
 
   updateSettings(settings: AppSettings): Observable<any> {
-    return this.http.put(`${this.apiBase}/api/settings`, settings, this.getAuthHeaders()).pipe(
+    return this.http.put(`${this.apiBase}`, settings, this.getAuthHeaders()).pipe(
       tap(() => {
         this.settingsChanged$.next(settings);
       })
@@ -62,14 +62,14 @@ export class AppSettingsService {
 
   getSavedSettings(): Observable<(AppSettings & { id: string })[]> {
     return this.http.get<(AppSettings & { id: string })[]>(
-      `${this.apiBase}/api/settings/saved`,
+      `${this.apiBase}/saved`,
       this.getAuthHeaders()
     );
   }
 
   saveSetting(settings: AppSettings): Observable<any> {
     return this.http.post(
-      `${this.apiBase}/api/settings/saved`,
+      `${this.apiBase}/saved`,
       settings,
       this.getAuthHeaders()
     );
@@ -77,7 +77,7 @@ export class AppSettingsService {
 
   updateSavedSetting(settingId: string, settings: AppSettings): Observable<any> {
     return this.http.put(
-      `${this.apiBase}/api/settings/saved/${settingId}`,
+      `${this.apiBase}/saved/${settingId}`,
       settings,
       this.getAuthHeaders()
     );
@@ -85,14 +85,14 @@ export class AppSettingsService {
 
   deleteSavedSetting(settingId: string): Observable<any> {
     return this.http.delete(
-      `${this.apiBase}/api/settings/saved/${settingId}`,
+      `${this.apiBase}/saved/${settingId}`,
       this.getAuthHeaders()
     );
   }
 
   getSavedSetting(settingId: string): Observable<AppSettings & { id: string }> {
     return this.http.get<AppSettings & { id: string }>(
-      `${this.apiBase}/api/settings/saved/${settingId}`,
+      `${this.apiBase}/saved/${settingId}`,
       this.getAuthHeaders()
     );
   }
@@ -101,7 +101,7 @@ export class AppSettingsService {
     const formData = new FormData();
     formData.append('file', logoFile, logoFile.name);
     return this.http.post<{ logoUrl: string }>(
-      `${this.apiBase}/api/settings/logo`,
+      `${this.apiBase}/logo`,
       formData,
       this.getAuthHeaders()
     );

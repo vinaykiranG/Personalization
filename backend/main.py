@@ -8,6 +8,9 @@ app = FastAPI()
 # CORS configuration
 origins = [
     "http://localhost:4200",
+    "http://127.0.0.1:8000",
+    "http://0.0.0.0:8000",
+    "http://localhost:8000",
     "https://us-central1-demos-dev-467317.cloudfunctions.net",
     "https://script.google.com",
     "https://n-k42wgrg5jok3zda5cwz6mm3ufq-script.googleusercontent.com",
