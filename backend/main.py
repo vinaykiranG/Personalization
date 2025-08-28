@@ -5,12 +5,9 @@ from backend.api import settings
 app = FastAPI()
 
 # CORS configuration
-origins = [
-    "http://localhost:4200",
-    "http://127.0.0.1:8000",
-    "http://0.0.0.0:8000",
-    "http://localhost:8000" # Adding this just in case, based on user's error log
-]
+# Allow all origins for development purposes
+# In a production environment, this should be restricted to the specific frontend URL
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -20,7 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(settings.router)
+app.include_router(settings.router, prefix="/api")
 
 @app.get("/")
 def read_root():
