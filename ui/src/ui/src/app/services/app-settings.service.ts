@@ -12,7 +12,7 @@ export interface AppSettings {
 
 @Injectable({ providedIn: 'root' })
 export class AppSettingsService {
-  private apiBase = 'https://us-central1-demos-dev-467317.cloudfunctions.net/vigenair-backend/api/settings';
+  private apiBase = '[YOUR_BACKEND_URL]/api/settings';
   public settingsChanged$ = new Subject<AppSettings>();
 
   constructor(private http: HttpClient) {
